@@ -293,6 +293,12 @@ function init(){
   if(t.members.some(m=>m.alias.toLowerCase()===alias.toLowerCase())){notice("Nama panggilan sudah digunakan pada tim itu.");return}
   if(t.members.length>=30){notice("Maksimal 30 anggota per tim untuk demo.");return}
   let expiry;try{expiry=matchExpiry()}catch(err){notice(err.message);return}
+  if(expiry.matchId){
+   const match=read(SCHEDULE_KEY,[]).find(s=>s.id===expiry.matchId);
+   if(!match||![match.home,match.away].some(n=>clean(n).toLowerCase()===t.name.toLowerCase())){
+    notice("Pertandingan harus melibatkan tim yang dipilih.");return;
+   }
+  }
   let member={id:"M-"+randomHex(6),alias,token:randomHex(16),expiresAt:expiry.expiresAt,matchId:expiry.matchId,createdAt:now(),checkedInAt:null};
   t.members.push(member);resetTeamReady(t);
   if(saveTeams(all)){stampAudit("member_registered","member:"+member.id,null,{teamId:t.id,memberId:member.id,expiresAt:member.expiresAt});
@@ -317,6 +323,10 @@ function init(){
   const all=teams(),t=all.find(t=>t.id===currentQR.teamId),m=t?.members.find(m=>m.id===currentQR.memberId);
   if(!m)return;let expiry;
   try{expiry=matchExpiry()}catch(e){notice(e.message);return}
+  if(expiry.matchId){
+   const match=read(SCHEDULE_KEY,[]).find(s=>s.id===expiry.matchId);
+   if(!match||![match.home,match.away].some(n=>clean(n).toLowerCase()===t.name.toLowerCase())){notice("Jadwal QR harus melibatkan tim peserta.");return}
+  }
   if(!confirm("Terbitkan ulang QR? QR sebelumnya langsung tidak berlaku."))return;
   const before={expiresAt:m.expiresAt,tokenRevoked:true};m.token=randomHex(16);m.expiresAt=expiry.expiresAt;m.matchId=expiry.matchId;
   m.checkedInAt=null;resetTeamReady(t);saveTeams(all);
