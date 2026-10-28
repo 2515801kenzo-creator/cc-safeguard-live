@@ -1,6 +1,6 @@
 /* CC SafeGuard Live offline shell v3 — only static assets, no API data cache */
-const CACHE="ccsl-shell-v3-20261028";
-const SHELL=["./","./index.html","./ui-v2.css","./features-v2.js","./operations-v3.js","./vendor/qrcode-generator.js","./assets/safeguard-icon.svg"];
+const CACHE="ccsl-shell-v4-20261028";
+const SHELL=["./","./index.html","./ui-v2.css","./features-v2.js","./operations-v3.js","./vendor/qrcode-generator.js","./vendor/jsQR.js","./assets/safeguard-icon.svg"];
 self.addEventListener("install",event=>{
  event.waitUntil(caches.open(CACHE).then(cache=>cache.addAll(SHELL)).then(()=>self.skipWaiting()));
 });
