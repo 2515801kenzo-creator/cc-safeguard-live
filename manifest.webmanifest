@@ -1,0 +1,18 @@
+{
+  "name": "CC SafeGuard Live — Match Operations",
+  "short_name": "SafeGuard Live",
+  "description": "Match operations interface and incident check-in tools",
+  "start_url": "./",
+  "scope": "./",
+  "display": "standalone",
+  "background_color": "#f5f7fb",
+  "theme_color": "#101e33",
+  "icons": [
+    {
+      "src": "assets/safeguard-icon.svg",
+      "sizes": "any",
+      "type": "image/svg+xml",
+      "purpose": "any maskable"
+    }
+  ]
+}
