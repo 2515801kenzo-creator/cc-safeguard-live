@@ -75,6 +75,14 @@
 <section class="view" id="settings">
  <div class="heading"><div><div class="eyebrow">CONFIGURATION</div><h1>Pengaturan Demo.</h1><p>Untuk presentasi kelompok, gunakan data simulasi tanpa nama atau identitas siswa asli.</p></div></div>
  <div class="cols"><div class="panel"><h3>Mode petugas (demo)</h3><div class="field"><label for="role">Peran untuk menguji antarmuka</label><select id="role"><option value="coordinator">Koordinator</option><option value="marshal">Marshal</option><option value="viewer">Pengamat</option></select></div><div class="notice">Peran ini hanya simulasi antarmuka dan bisa diganti siapa saja. Ini bukan autentikasi atau pembatasan akses yang aman.</div></div><div class="panel"><h3>Data demonstrasi</h3><p style="font-size:13px;color:#5a7180">Muat laporan contoh untuk mencoba penugasan dan penanganan, atau kosongkan data yang tersimpan di browser ini.</p><div class="actions"><button class="button dark" id="seed-btn">Muat skenario fiktif</button><button class="button danger" id="clear-btn">Hapus seluruh data demo</button></div></div></div>
+ <div class="panel" style="margin-top:15px" id="vibration-settings">
+ <div class="eyebrow">ALERT SYSTEM · DEMO</div>
+ <h3>Getaran Peringatan Insiden</h3>
+ <p style="font-size:13px;color:#5a7180">Saat laporan insiden baru dicatat, perangkat yang membuka website ini dapat bergetar. Fitur hanya bekerja pada browser yang mendukung getaran, ketika halaman aktif, dan setelah interaksi pengguna. Tidak mengirim peringatan ke HP orang lain.</p>
+ <label style="display:flex;align-items:center;gap:10px;font-size:13px;font-weight:750;cursor:pointer;margin:15px 0"><input type="checkbox" id="vibrate-enabled" style="width:19px;height:19px;accent-color:#13a77c"> Aktifkan getaran insiden di perangkat ini</label>
+ <div class="actions"><button class="button soft" type="button" id="vibrate-test">📳 Tes getaran sekarang</button><span id="vibrate-status" class="tag" role="status" aria-live="polite">Memeriksa dukungan perangkat…</span></div>
+ <p style="font-size:12px;color:#758a96">Catatan: Pada iPhone/iPad, sebagian besar browser tidak mendukung getaran website. HP Android dengan browser yang kompatibel lebih mungkin mendukungnya. Tombol tes tidak mengirim laporan.</p>
+ </div>
  <div class="panel" style="margin-top:15px"><h3>Ketika ingin real-time antarperangkat</h3><p style="font-size:13px;color:#5a7180">GitHub Pages hanya memublikasikan halaman website. Laporan di versi ini disimpan dengan localStorage di browser masing-masing, bukan ke HP orang lain. Untuk operasional real-time, perlu database seperti Firebase, login petugas, izin akses server, pengujian, dan persetujuan sekolah.</p></div>
 </section>
 <div class="footer">CC SafeGuard Live · Prototipe pembelajaran independen kelas 8 — CC Cup XLI 2026. Tidak berafiliasi secara resmi atau digunakan sebagai saluran darurat panitia. Simpan hanya data demonstrasi anonim.</div>
@@ -82,20 +90,37 @@
 <script>
 (function(){
 "use strict";
-var KEY="cc_safeguard_live_demo_v2",ROLE_KEY="cc_safeguard_live_role";
+var KEY="cc_safeguard_live_demo_v2",ROLE_KEY="cc_safeguard_live_role",VIBRATION_KEY="cc_safeguard_vibration_enabled";
 var data={cases:[],cards:[]};var role="coordinator";
 function safe(s){return String(s==null?"":s).replace(/[&<>"']/g,function(x){return {"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[x]})}
 function now(){return new Date().toLocaleString("id-ID",{dateStyle:"medium",timeStyle:"short"})}
 function id(){return "CC-"+Date.now().toString(36).toUpperCase()+"-"+Math.random().toString(36).slice(2,5).toUpperCase()}
 function load(){try{var j=JSON.parse(localStorage.getItem(KEY));if(j&&Array.isArray(j.cases)&&Array.isArray(j.cards))data=j}catch(e){}role=localStorage.getItem(ROLE_KEY)||"coordinator";document.getElementById("role").value=role}
 function save(){localStorage.setItem(KEY,JSON.stringify(data))}
+function supportsVibration(){return typeof navigator.vibrate==="function"}
+function vibrationEnabled(){return localStorage.getItem(VIBRATION_KEY)==="1"}
+function vibrateOnce(){
+ if(!supportsVibration() || document.visibilityState!=="visible") return false;
+ try{return navigator.vibrate([180,100,180])===true}catch(e){return false}
+}
+function alertNewIncident(){
+ if(!vibrationEnabled())return;
+ var ok=vibrateOnce();
+ if(!ok && !supportsVibration())toast("Laporan baru tercatat. Browser ini tidak mendukung getaran.");
+}
+function renderVibrationSettings(){
+ var toggle=document.getElementById("vibrate-enabled"),state=document.getElementById("vibrate-status");
+ toggle.checked=vibrationEnabled();
+ if(!supportsVibration()){toggle.disabled=true;state.textContent="Getaran tidak didukung di browser ini";state.setAttribute("title","Coba browser Android yang kompatibel");}
+ else{toggle.disabled=false;state.textContent=vibrationEnabled()?"Getaran aktif · perangkat ini":"Getaran nonaktif";}
+}
 function toast(msg){var x=document.getElementById("toast");x.textContent=msg;x.classList.add("show");clearTimeout(window._ccToast);window._ccToast=setTimeout(function(){x.classList.remove("show")},3500)}
 function nav(name){document.querySelectorAll(".view").forEach(function(el){el.classList.toggle("active",el.id===name)});document.querySelectorAll("[data-view]").forEach(function(el){el.classList.toggle("active",el.getAttribute("data-view")===name)});var title={dashboard:"Dashboard",report:"Laporan",cases:"Pusat penanganan",cards:"CardSync",insights:"Analisis",rules:"SOP & ITG",settings:"Pengaturan"};document.getElementById("crumb").textContent=title[name]||"Dashboard";render();window.scrollTo(0,0)}
 function label(st){return {open:"Laporan baru",assigned:"Ditugaskan",progress:"Ditangani",closed:"Selesai"}[st]||"Baru"}
 function render(){
  var total=data.cases.length,open=data.cases.filter(function(c){return c.status==="open"||c.status==="assigned"}).length,progress=data.cases.filter(function(c){return c.status==="progress"}).length,closed=data.cases.filter(function(c){return c.status==="closed"}).length;
  document.getElementById("m-total").textContent=total;document.getElementById("m-open").textContent=open;document.getElementById("m-progress").textContent=progress;document.getElementById("m-closed").textContent=closed;
- document.getElementById("role-pill").textContent=role.toUpperCase();
+ document.getElementById("role-pill").textContent=role.toUpperCase();renderVibrationSettings();
  var recent=data.cases.slice().reverse().slice(0,4);
  document.getElementById("recent").innerHTML=recent.length?recent.map(function(c){return '<div class="case"><div><strong>'+safe(c.type)+'</strong><small>'+safe(c.place)+" · "+safe(c.time)+'</small></div><span class="status '+safe(c.status)+'">'+label(c.status)+"</span></div>"}).join(""):'<div class="empty">Belum ada laporan. Gunakan "Muat skenario fiktif" pada Pengaturan untuk demonstrasi.</div>';
  renderCases();renderCards();renderChart();
@@ -125,7 +150,7 @@ document.querySelectorAll("[data-view]").forEach(function(b){b.addEventListener(
 document.getElementById("filter").addEventListener("change",renderCases);
 document.getElementById("incident-form").addEventListener("submit",function(e){e.preventDefault();if(role==="viewer"){toast("Pengamat tidak dapat membuat laporan");return}
  var c={id:id(),type:document.getElementById("type").value,priority:document.getElementById("priority").value,place:document.getElementById("place").value,reporter:document.getElementById("reporter").value.trim(),detail:document.getElementById("detail").value.trim(),time:now(),status:"open",log:["Laporan dicatat pada "+now()]};
- if(!c.reporter||!c.detail){toast("Lengkapi nama petugas fiktif dan kronologi objektif.");return}data.cases.push(c);save();this.reset();toast("Laporan demo tersimpan di browser.");nav("cases")
+ if(!c.reporter||!c.detail){toast("Lengkapi nama petugas fiktif dan kronologi objektif.");return}data.cases.push(c);save();alertNewIncident();this.reset();toast("Laporan demo tersimpan di browser.");nav("cases")
 });
 document.getElementById("case-list").addEventListener("click",function(e){var b=e.target.closest("[data-act]");if(!b)return;var c=data.cases.find(function(c){return c.id===b.dataset.id});if(!c)return;
  var act=b.dataset.act;
@@ -139,10 +164,26 @@ document.getElementById("card-form").addEventListener("submit",function(e){e.pre
  data.cards.push({team:team,jersey:jersey,color:result,time:now(),note:note});save();render();this.reset();toast(note)
 });
 document.getElementById("role").addEventListener("change",function(){role=this.value;localStorage.setItem(ROLE_KEY,role);render();toast("Peran simulasi diganti: "+role)});
-document.getElementById("seed-btn").addEventListener("click",function(){if(data.cases.length){if(!confirm("Tambahkan skenario demo lain ke daftar?"))return}data.cases.push({id:id(),type:"Dorong-dorongan",priority:"tinggi",place:"Lapangan mini soccer",reporter:"Marshal A (simulasi)",detail:"Contoh fiktif: dua pemain saling mendorong setelah perebutan bola. Rekan setim segera membantu melerai; petugas memeriksa situasi.",time:now(),status:"open",log:["Skenario latihan dibuat "+now()]} );save();render();toast("Skenario fiktif berhasil dimuat");nav("cases")});
+document.getElementById("vibrate-enabled").addEventListener("change",function(){
+ localStorage.setItem(VIBRATION_KEY,this.checked?"1":"0");
+ renderVibrationSettings();toast(this.checked?"Peringatan getaran diaktifkan pada perangkat ini.":"Peringatan getaran dimatikan.");
+});
+document.getElementById("vibrate-test").addEventListener("click",function(){
+ if(!supportsVibration()){toast("Perangkat atau browser ini tidak mendukung getaran website.");return}
+ var ok=vibrateOnce();
+ toast(ok?"Perintah tes getaran dikirim ke perangkat.":"Getaran tidak dijalankan. Pastikan halaman aktif dan perangkat mendukungnya.");
+});
+document.getElementById("seed-btn").addEventListener("click",function(){if(data.cases.length){if(!confirm("Tambahkan skenario demo lain ke daftar?"))return}data.cases.push({id:id(),type:"Dorong-dorongan",priority:"tinggi",place:"Lapangan mini soccer",reporter:"Marshal A (simulasi)",detail:"Contoh fiktif: dua pemain saling mendorong setelah perebutan bola. Rekan setim segera membantu melerai; petugas memeriksa situasi.",time:now(),status:"open",log:["Skenario latihan dibuat "+now()]} );save();render();alertNewIncident();toast("Skenario fiktif berhasil dimuat");nav("cases")});
 document.getElementById("clear-btn").addEventListener("click",function(){if(!confirm("Hapus seluruh data demonstrasi dari browser ini?"))return;data={cases:[],cards:[]};save();render();toast("Data demo lokal sudah dikosongkan")});
 document.getElementById("export-btn").addEventListener("click",function(){var rows=[["ID","Waktu","Jenis","Prioritas","Lokasi","Petugas","Status","Kronologi"]];data.cases.forEach(function(c){rows.push([c.id,c.time,c.type,c.priority,c.place,c.reporter,label(c.status),c.detail])});var text=rows.map(function(row){return row.map(function(x){return '"'+String(x).replace(/"/g,'""')+'"'}).join(",")}).join("\r\n");var a=document.createElement("a");a.href=URL.createObjectURL(new Blob(["\ufeff",text],{type:"text/csv;charset=utf-8"}));a.download="cc-safeguard-laporan-demo.csv";a.click();setTimeout(function(){URL.revokeObjectURL(a.href)},4000)});
-window.addEventListener("storage",function(e){if(e.key===KEY){load();render()}});
+window.addEventListener("storage",function(e){
+ if(e.key===VIBRATION_KEY){renderVibrationSettings();return}
+ if(e.key===KEY){
+  var previousIds=new Set(data.cases.map(function(c){return c.id}));
+  load();render();
+  if(data.cases.some(function(c){return !previousIds.has(c.id)})){alertNewIncident();toast("Ada laporan demo baru di tab website ini.");}
+ }
+});
 load();render()
 })();
 </script>
