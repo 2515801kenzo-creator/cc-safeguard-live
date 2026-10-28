@@ -69,6 +69,7 @@ function renderSchedule(){
  var list=$("schedule-list");
  if(list)list.innerHTML=arr.length?arr.map(function(s){return scheduleRow(s,true)}).join(""):'<div class="empty">Jadwal masih kosong. Tambahkan pertandingan lewat panel admin di bawah.</div>';
  setText("schedule-total",String(arr.length));
+ var preview=$("conflict-preview");if(preview&&window.CCSafeConflictCheck){var problems=[];arr.forEach(function(s){problems.push(...window.CCSafeConflictCheck(s,arr))});if(problems.length){preview.textContent="⚠ "+problems[0];preview.classList.add("conflict-danger")}}
 }
 function renderAdmin(){
  var admin=isAdmin();
@@ -157,31 +158,43 @@ function init(){
   if(homeScore==null||awayScore==null){message("Skor harus berupa angka 0–99.");return}
   if((home&&!away)||(!home&&away)){message("Isi kedua nama tim atau kosongkan keduanya.");return}
   var cfg={home:home,away:away,homeScore:homeScore,awayScore:awayScore,state:$("admin-match-state").value,venue:oneLine($("admin-venue").value,80)};
-  if(write(MATCH_KEY,cfg)){renderMatch();message("Scoreboard diperbarui di browser ini.")}
+  var before=localMatch();
+  if(write(MATCH_KEY,cfg)){if(window.CCSafeAudit)window.CCSafeAudit("scoreboard_updated","scoreboard",before,cfg);renderMatch();message("Scoreboard diperbarui di browser ini.")}
  });
  var reset=$("reset-score");
  if(reset)reset.addEventListener("click",function(){
   if(!isAdmin())return;
   if(!confirm("Reset skor menjadi 0–0 dan tetap simpan nama tim?"))return;
-  var cfg=localMatch();cfg.homeScore=0;cfg.awayScore=0;write(MATCH_KEY,cfg);renderMatch();message("Skor direset menjadi 0–0.");
+  var cfg=localMatch(),before=Object.assign({},cfg);cfg.homeScore=0;cfg.awayScore=0;if(write(MATCH_KEY,cfg)){if(window.CCSafeAudit)window.CCSafeAudit("score_reset","scoreboard",before,cfg);renderMatch();message("Skor direset menjadi 0–0.")}
  });
  var scheduleForm=$("schedule-form");
  if(scheduleForm)scheduleForm.addEventListener("submit",function(event){
   event.preventDefault();if(!isAdmin()){message("Pengaturan jadwal khusus Admin (demo).");return}
-  var home=oneLine($("schedule-home").value,48),away=oneLine($("schedule-away").value,48),date=$("schedule-date").value,time=$("schedule-time").value,venue=oneLine($("schedule-venue").value,80);
-  if(!home||!away||!date||!time){message("Lengkapi kedua tim, tanggal dan jam.");return}
+  var home=oneLine($("schedule-home").value,48),away=oneLine($("schedule-away").value,48),date=$("schedule-date").value,time=$("schedule-time").value,venue=oneLine($("schedule-venue").value,80),duration=Number($("schedule-duration").value);
+  if(!home||!away||!date||!time||!venue||!Number.isFinite(duration)||duration<15||duration>240){message("Lengkapi tim, tanggal, jam, lapangan, dan durasi yang valid.");return}
   if(home.toLowerCase()===away.toLowerCase()){message("Dua tim harus berbeda.");return}
   var arr=getSchedule();
   if(arr.length>=100){message("Maksimal 100 jadwal dalam browser ini.");return}
-  arr.push({id:"S-"+Date.now().toString(36)+"-"+Math.random().toString(36).slice(2,7),home:home,away:away,date:date,time:time,venue:venue});
-  if(write(SCHEDULE_KEY,arr)){scheduleForm.reset();renderSchedule();message("Jadwal berhasil ditambahkan di browser ini.")}
+  var next={id:"S-"+Date.now().toString(36)+"-"+Math.random().toString(36).slice(2,7),home:home,away:away,date:date,time:time,venue:venue,duration:duration};
+  var issues=window.CCSafeConflictCheck?window.CCSafeConflictCheck(next,arr):["Pemeriksa bentrok belum tersedia."];
+  if(issues.length){message("Jadwal ditolak: "+issues[0]);return}
+  arr.push(next);
+  if(write(SCHEDULE_KEY,arr)){
+   if(window.CCSafeAudit)window.CCSafeAudit("schedule_created","schedule:"+next.id,null,next);
+   scheduleForm.reset();renderSchedule();
+   if(window.CCSafeRefresh)window.CCSafeRefresh();
+   message("Jadwal berhasil ditambahkan dan diperiksa tanpa bentrok.");
+  }
  });
  var list=$("schedule-list");
  if(list)list.addEventListener("click",function(event){
   var btn=event.target.closest("[data-delete-schedule]");if(!btn||!isAdmin())return;
   if(!confirm("Hapus jadwal ini?"))return;
-  var arr=getSchedule().filter(function(s){return s.id!==btn.dataset.deleteSchedule});
-  if(write(SCHEDULE_KEY,arr)){renderSchedule();message("Jadwal dihapus.")}
+  var all=getSchedule(),old=all.find(function(s){return s.id===btn.dataset.deleteSchedule}),arr=all.filter(function(s){return s.id!==btn.dataset.deleteSchedule});
+  if(write(SCHEDULE_KEY,arr)){
+   if(window.CCSafeAudit)window.CCSafeAudit("schedule_deleted","schedule:"+btn.dataset.deleteSchedule,old,null);
+   renderSchedule();if(window.CCSafeRefresh)window.CCSafeRefresh();message("Jadwal dihapus.");
+  }
  });
  var sel=$("role");
  if(sel)sel.addEventListener("change",function(){renderAdmin();setTimeout(renderMatch,0)});
