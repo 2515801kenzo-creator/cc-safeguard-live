@@ -23,16 +23,19 @@
   <button data-view="cases" aria-label="Insiden hari ini" title="Insiden hari ini"><span class="mini">▤</span><span class="nav-label">Insiden hari ini</span></button>
   <button data-view="history" aria-label="Riwayat insiden" title="Riwayat insiden"><span class="mini">▨</span><span class="nav-label">Riwayat insiden</span></button>
   <button data-view="schedule" aria-label="Jadwal pertandingan" title="Jadwal pertandingan"><span class="mini">▦</span><span class="nav-label">Jadwal pertandingan</span></button>
+  <button data-view="teams" aria-label="Team Check-In" title="Team Check-In"><span class="mini">◫</span><span class="nav-label">Team Check-In</span></button>
   <button data-view="cards" aria-label="CardSync" title="CardSync"><span class="mini">▣</span><span class="nav-label">CardSync</span></button>
   <button data-view="insights" aria-label="Statistik" title="Statistik"><span class="mini">▥</span><span class="nav-label">Statistik</span></button>
   <button data-view="decisions" aria-label="Rule Assistant" title="Rule Assistant"><span class="mini">⚖</span><span class="nav-label">Rule Assistant</span></button>
  </nav><div class="nav-title" style="margin-top:25px">PREFERENCES</div><nav class="nav">
   <button data-view="settings" aria-label="Pengaturan" title="Pengaturan"><span class="mini">⚙</span><span class="nav-label">Pengaturan</span></button>
+  <button data-view="audit" aria-label="Activity & Audit Log" title="Activity & Audit Log"><span class="mini">≡</span><span class="nav-label">Activity & Audit</span></button>
+  <button data-view="dailyreport" aria-label="Daily Reports" title="Daily Reports"><span class="mini">▤</span><span class="nav-label">Daily Reports</span></button>
  </nav></div>
  <div class="sidefoot"><strong>CC CUP XLI</strong>Match operations workspace · Data tersimpan lokal sampai backend diaktifkan.</div>
 </aside>
 <main class="main">
-<header class="topbar"><div class="crumb">CC SAFEGUARD &nbsp;/&nbsp; <b id="crumb">Dashboard</b></div><div style="display:flex;gap:7px;align-items:center"><span class="pill">● LOCAL MODE</span><span class="pill gray" id="role-pill">ADMIN</span></div></header>
+<header class="topbar"><div class="crumb">CC SAFEGUARD &nbsp;/&nbsp; <b id="crumb">Dashboard</b></div><div style="display:flex;gap:7px;align-items:center"><span class="pill">● LOCAL MODE</span><span class="pill gray" id="role-pill">ADMIN</span><span class="sync-indicator" id="sync-status">● LOCAL</span></div></header>
 <div class="site-alert" id="site-alert" role="alert" aria-live="assertive"><div style="font-size:25px">⚠</div><div style="flex:1"><b id="alert-title">Insiden baru</b><span id="alert-detail">Periksa laporan.</span></div><button id="alert-close" type="button" aria-label="Tutup peringatan">×</button></div>
 <div class="content">
 <section class="view active" id="dashboard">
@@ -81,16 +84,16 @@
 <div class="field"><label for="schedule-away">Tim B</label><input id="schedule-away" required maxlength="48" placeholder="Nama tim" data-admin-only></div>
 <div class="field"><label for="schedule-date">Tanggal</label><input id="schedule-date" type="date" required data-admin-only></div>
 <div class="field"><label for="schedule-time">Jam</label><input id="schedule-time" type="time" required data-admin-only></div>
-<div class="field wide"><label for="schedule-venue">Lokasi (opsional)</label><input id="schedule-venue" maxlength="80" placeholder="Lapangan / lokasi" data-admin-only></div>
-</div><button class="button" type="submit" data-admin-only>＋ Tambah jadwal</button></form></div></div>
+<div class="field"><label for="schedule-venue">Lapangan (wajib, untuk deteksi bentrok)</label><input id="schedule-venue" required maxlength="80" placeholder="Contoh: Lapangan A" data-admin-only></div><div class="field"><label for="schedule-duration">Durasi (menit)</label><select id="schedule-duration" data-admin-only><option value="30">30 menit</option><option value="45">45 menit</option><option value="60" selected>60 menit</option><option value="90">90 menit</option><option value="120">120 menit</option></select></div>
+</div><div class="conflict-preview" id="conflict-preview" role="alert">Pemeriksaan bentrok akan muncul di sini.</div><button class="button" type="submit" data-admin-only>＋ Tambah jadwal</button></form></div></div>
 </section>
 <section class="view" id="cases">
- <div class="heading"><div><div class="eyebrow">ACTIVE INCIDENT WORKSPACE</div><h1>Insiden Hari Ini.</h1><p>Daftar laporan untuk tanggal hari ini. Pergantian hari otomatis memindahkan laporan lama ke Riwayat Insiden tanpa menghapus data.</p></div><button class="button" data-view="report">＋ Laporan baru</button></div>
- <div class="day-operations-bar"><div><span class="day-indicator">● CURRENT DAY</span><strong id="cases-today-label">Hari ini</strong><small>Perubahan status tetap dicatat dalam log tindakan.</small></div><button class="button soft" data-view="history">Buka riwayat →</button></div>
+ <div class="heading"><div><div class="eyebrow">ACTIVE INCIDENT WORKSPACE</div><h1>Insiden Aktif.</h1><p>Laporan hari ini dan kasus dari hari sebelumnya yang masih membutuhkan penanganan. Kasus selesai tersimpan pada arsip tanggal.</p></div><button class="button" data-view="report">＋ Laporan baru</button></div>
+ <div class="day-operations-bar"><div><span class="day-indicator">● ACTIVE CASES</span><strong id="cases-today-label">Hari ini</strong><small>Termasuk kasus lama yang belum selesai.</small></div><button class="button soft" data-view="history">Buka riwayat →</button></div>
  <div class="panel">
   <div class="filters-row">
    <div class="field"><label for="filter">Status</label><select id="filter"><option value="all">Semua status</option><option value="open">Laporan baru</option><option value="assigned">Ditugaskan</option><option value="progress">Sedang ditangani</option><option value="closed">Selesai</option></select></div>
-   <div class="field"><label for="today-search">Cari laporan hari ini</label><input id="today-search" type="search" maxlength="120" placeholder="ID, kategori, atau lokasi…"></div>
+   <div class="field"><label for="today-search">Cari insiden aktif</label><input id="today-search" type="search" maxlength="120" placeholder="ID, kategori, atau lokasi…"></div>
   </div>
   <div id="case-list"></div>
  </div>
@@ -111,6 +114,68 @@
   <div id="archive-list" class="archive-list"></div>
  </div>
  </section>
+
+<section class="view" id="teams">
+ <div class="heading"><div><div class="eyebrow">TEAM OPERATIONS</div><h1>Team Lobby & Check-In.</h1><p>Daftarkan tim, anggota, dan QR unik dengan masa berlaku. Check-in dengan QR kamera atau kode manual.</p></div><span class="pill gray">QR LOCAL VALIDATION</span></div>
+ <div class="history-stats">
+  <div class="history-stat"><small>Tim terdaftar</small><strong id="team-total">0</strong></div>
+  <div class="history-stat"><small>Peserta hadir</small><strong id="team-checked">0</strong></div>
+  <div class="history-stat"><small>Tim siap</small><strong id="team-ready">0</strong></div>
+ </div>
+ <div class="info-strip" style="margin-bottom:18px"><i>ⓘ</i><span>Lobby dan QR di versi ini memakai data browser yang sama. QR dari HP lain belum bisa diverifikasi tanpa backend bersama dan autentikasi admin. Gunakan alias fiktif, bukan data pribadi anak.</span></div>
+ <div class="cols">
+  <div class="panel"><div class="eyebrow">ADMIN · CREATE LOBBY</div><h3>Buat tim</h3><p class="help" id="team-permission">Admin dapat membuat lobby dan menandai tim siap.</p><form id="team-form">
+    <div class="field"><label for="team-name">Nama tim</label><input id="team-name" maxlength="48" placeholder="Contoh: Tim Garuda" required></div>
+    <button class="button" id="team-create" type="submit">＋ Buat lobby tim</button>
+   </form>
+   <div class="divider" style="height:1px;background:#e6edf0;margin:21px 0"></div>
+   <div class="eyebrow">PARTICIPANT REGISTRATION</div><h3>Daftar sebagai anggota tim</h3>
+   <form id="member-form"><div class="field"><label for="join-code">Kode lobby tim</label><input id="join-code" maxlength="30" required placeholder="TEAM-XXXXXXXX"></div>
+    <div class="field"><label for="member-alias">Nama panggilan / kode peserta</label><input id="member-alias" required maxlength="48" placeholder="Contoh: Pemain 07"></div>
+    <div class="field"><label for="member-expiry">Masa berlaku QR</label>
+     <select id="member-expiry"><option value="1">1 jam</option><option value="6">6 jam</option><option value="12">12 jam</option><option value="24" selected>24 jam</option><option value="48">48 jam</option><option value="72">72 jam</option><option value="168">7 hari</option><option value="match">Sampai awal pertandingan</option><option value="custom">Atur tanggal/jam sendiri</option></select>
+    </div>
+    <div class="field" id="match-expiry-box" hidden><label for="member-match">Pertandingan</label><select id="member-match"><option value="">Pilih pertandingan</option></select></div>
+    <div class="field" id="custom-expiry-box" hidden><label for="member-custom">Kedaluwarsa pada</label><input id="member-custom" type="datetime-local"></div>
+    <button class="button dark" type="submit">Daftar & buat QR peserta</button>
+   </form>
+  </div>
+  <div class="panel"><div class="eyebrow">QR PASS</div><h3>Kartu peserta</h3>
+   <div id="qr-card" hidden class="qr-card">
+    <strong id="qr-owner"></strong><p id="qr-expiry" class="help"></p><div id="qr-render" class="qr-render"></div>
+    <p id="qr-status" class="tag">Belum digunakan</p><p id="qr-token" class="manual-token"></p>
+    <div class="actions"><button class="button soft" id="qr-copy" type="button">Salin kode manual</button><button class="button dark" id="qr-regenerate" type="button">Terbitkan QR baru (admin)</button></div>
+   </div>
+   <div id="qr-empty" class="empty">Daftarkan peserta lalu pilih “Lihat QR” pada lobby tim untuk menampilkan kartu.</div>
+   <div class="divider" style="height:1px;background:#e6edf0;margin:21px 0"></div>
+   <div class="eyebrow">SCANNER · CHECK-IN</div><h3>Validasi QR peserta</h3>
+   <form id="checkin-form"><div class="field"><label for="checkin-token">Kode dari QR atau kamera</label><input id="checkin-token" maxlength="200" required placeholder="CCSL1:..." autocomplete="off"></div><button type="submit" class="button">✓ Validasi check-in</button></form>
+   <div class="actions"><button id="camera-start" type="button" class="button soft">▣ Scan kamera</button><button id="camera-stop" type="button" class="button danger" hidden>Hentikan kamera</button></div>
+   <video id="qr-camera" playsinline muted hidden style="width:100%;max-height:260px;object-fit:cover;border-radius:13px;margin-top:10px"></video>
+   <p class="help">Kamera menggunakan BarcodeDetector jika tersedia. Jika tidak didukung, salin kode manual pada kartu QR dan tempel di formulir.</p>
+  </div>
+ </div>
+ <div class="panel" style="margin-top:17px"><div class="panel-head"><div><div class="eyebrow">TEAM DIRECTORY</div><h3>Daftar lobby tim</h3></div><span class="tag">Status otomatis</span></div><div id="team-list" class="team-grid"></div></div>
+ <div hidden><select id="member-team"></select><input type="checkbox" id="team-ready-override"></div>
+</section>
+<section class="view" id="audit">
+ <div class="heading"><div><div class="eyebrow">ACTIVITY TRACKING</div><h1>Activity & Audit Log.</h1><p>Melacak perubahan penting, siapa yang melakukan, dan nilai sebelum-sesudah dalam browser ini.</p></div><button class="button soft" id="audit-download">↓ Ekspor JSON</button></div>
+ <div class="info-strip" style="margin-bottom:17px"><i>ⓘ</i><span>Audit log saat ini hanya tersimpan di browser, dan nama operator dapat diubah sendiri. Ini bukan audit trail tersertifikasi atau anti-manipulasi; versi resmi memerlukan login dan pencatatan di server.</span></div>
+ <div class="panel"><div class="filters-row"><div class="field"><label for="audit-search">Cari aktivitas</label><input id="audit-search" type="search" placeholder="Skor, jadwal, operator…"></div></div><p class="help"><strong id="audit-total">0</strong> aktivitas tercatat, maksimal 1.500 terakhir.</p><div id="audit-list"></div></div>
+</section>
+<section class="view" id="dailyreport">
+ <div class="heading"><div><div class="eyebrow">POST-MATCH REPORTING</div><h1>Daily Reports.</h1><p>Laporan otomatis berdasarkan data yang dicatat. Pilih tanggal dan unduh rangkuman untuk panitia.</p></div><button class="button dark" id="daily-download">↓ Unduh CSV harian</button></div>
+ <div class="panel"><div class="filters-row"><div class="field"><label for="daily-date">Tanggal laporan</label><input type="date" id="daily-date"></div></div><h3 id="daily-report-period">Laporan hari ini</h3>
+ <div class="history-stats">
+ <div class="history-stat"><small>Pertandingan</small><strong id="daily-match-count">0</strong></div>
+ <div class="history-stat"><small>Laporan masuk</small><strong id="daily-new-count">0</strong></div>
+ <div class="history-stat"><small>Selesai</small><strong id="daily-closed-count">0</strong></div>
+ <div class="history-stat"><small>Belum selesai</small><strong id="daily-open-count">0</strong></div>
+ </div>
+ <div class="info-strip"><i>◷</i><span>Waktu respons rata-rata: <strong id="daily-response">Belum ada data</strong>. Dihitung dari laporan hingga pembaruan status pertama yang tercatat dalam audit.</span></div></div>
+ <div class="cols" style="margin-top:17px"><div class="panel"><h3>Jadwal pertandingan</h3><div id="daily-match-list"></div></div><div class="panel"><h3>Insiden yang dicatat</h3><div id="daily-incident-list"></div></div></div>
+</section>
+
 <section class="view" id="cards">
  <div class="heading"><div><div class="eyebrow">DISCIPLINE RECORD</div><h1>CardSync.</h1><p>Mencatat kartu setelah keputusan wasit, bukan memutuskan kesalahan menggunakan AI.</p></div></div>
  <div class="info-strip" style="margin-bottom:19px"><i>ⓘ</i><span>Dua kartu kuning pada pemain yang sama dalam satu pertandingan menghasilkan kartu merah. Hukuman berikutnya tetap mengikuti SOP resmi.</span></div>
@@ -141,7 +206,7 @@
 <section class="view" id="settings">
 <div class="heading"><div><div class="eyebrow">WORKSPACE SETTINGS</div><h1>Pengaturan.</h1><p>Kelola scoreboard, akses tampilan, dan peringatan perangkat.</p></div></div>
 <div class="cols"><div class="panel"><h3>Mode pengguna</h3>
-<div class="field"><label for="role">Peran (simulasi antarmuka)</label><select id="role"><option value="coordinator">Admin (demo)</option><option value="marshal">Marshal</option><option value="viewer">Pengamat</option></select></div>
+<div class="field"><label for="audit-actor">Nama operator lokal untuk Audit Log</label><input id="audit-actor" maxlength="50" placeholder="Contoh: Operator A"></div><div class="field"><label for="role">Peran (simulasi antarmuka)</label><select id="role"><option value="coordinator">Admin (demo)</option><option value="marshal">Marshal</option><option value="viewer">Pengamat</option></select></div>
 <div class="info-strip"><i>ⓘ</i><span>Peran belum memakai login dan tidak aman untuk penggunaan publik. Siapa pun dapat menggantinya.</span></div></div>
 <div class="panel"><div class="eyebrow">MATCH CONFIGURATION</div><h3>Kelola scoreboard</h3><div class="admin-zone">
 <form id="match-admin-form"><div class="form-grid">
@@ -158,9 +223,9 @@
 <label class="toggle-line"><input type="checkbox" id="sound-enabled"> Peringatan suara</label><span class="tag" id="sound-state">Suara nonaktif</span>
 <div class="actions"><button class="button dark" id="alert-test" type="button">Tes suara, layar &amp; getaran</button><button class="button soft" id="vibrate-test" type="button">Tes getaran saja</button></div>
 <p class="help">Getaran halaman web umumnya tidak tersedia di iPhone/iPad. Suara perlu interaksi pengguna. Tidak ada notifikasi latar belakang atau antarperangkat.</p></div>
-<div class="panel"><div class="eyebrow">LOCAL DATA</div><h3>Data &amp; penyimpanan</h3>
+<div class="panel"><div class="eyebrow">LOCAL DATA / OFFLINE QUEUE</div><h3>Data &amp; antrean pengiriman</h3>
 <p style="font-size:13px;color:#607484">Skor, tim, jadwal, dan laporan hanya tersimpan pada browser ini; bukan data bersama. Penggunaan resmi memerlukan database, autentikasi, izin, dan persetujuan panitia.</p>
-<div class="actions"><button class="button soft" id="seed-btn" type="button">Muat contoh insiden</button><button class="button soft" id="backup-settings" type="button">↓ Backup JSON</button><label class="button soft file-upload" for="restore-input">↑ Pulihkan backup</label><input id="restore-input" type="file" accept=".json,application/json" aria-label="Pilih file backup JSON" class="visually-hidden"><button class="button danger" id="clear-btn" type="button">Kosongkan data insiden</button></div>
+<div class="info-strip" style="margin:12px 0"><i>☁</i><span><strong id="queue-count">0</strong> laporan menunggu server. <span id="queue-state">Belum ada backend terhubung.</span></span></div><button class="button soft" type="button" id="sync-retry">Periksa status sinkronisasi</button><div id="queue-list" style="margin:12px 0"></div><div class="actions"><button class="button soft" id="seed-btn" type="button">Muat contoh insiden</button><button class="button soft" id="backup-settings" type="button">↓ Backup JSON</button><label class="button soft file-upload" for="restore-input">↑ Pulihkan backup</label><input id="restore-input" type="file" accept=".json,application/json" aria-label="Pilih file backup JSON" class="visually-hidden"><button class="button danger" id="clear-btn" type="button">Kosongkan data insiden</button></div>
 <p class="help">Tombol kosongkan data menghapus laporan dan kartu dari browser ini, termasuk arsip. Backup JSON menyimpan laporan, kartu, skor, dan jadwal. Pemulihan akan mengganti data lokal yang ada. Jangan memasukkan data sensitif.</p></div></div>
 </section>
 <div class="footer">CC SafeGuard Live · Match operations interface · Local Mode. Tidak terhubung ke panitia atau layanan darurat. Gunakan data uji anonim.</div>
@@ -189,7 +254,7 @@ function renderVibrationSettings(){
  else{toggle.disabled=false;state.textContent=vibrationEnabled()?"Getaran aktif · perangkat ini":"Getaran nonaktif";}
 }
 function toast(msg){var x=document.getElementById("toast");x.textContent=msg;x.classList.add("show");clearTimeout(window._ccToast);window._ccToast=setTimeout(function(){x.classList.remove("show")},3500)}
-function nav(name){document.querySelectorAll(".view").forEach(function(el){el.classList.toggle("active",el.id===name)});document.querySelectorAll("[data-view]").forEach(function(el){el.classList.toggle("active",el.getAttribute("data-view")===name)});var title={dashboard:"Dashboard",report:"Laporan",cases:"Insiden Hari Ini",history:"Riwayat Insiden",schedule:"Jadwal",cards:"CardSync",insights:"Statistik",decisions:"Rule Assistant",settings:"Pengaturan"};document.getElementById("crumb").textContent=title[name]||"Dashboard";render();window.scrollTo(0,0)}
+function nav(name){document.querySelectorAll(".view").forEach(function(el){el.classList.toggle("active",el.id===name)});document.querySelectorAll("[data-view]").forEach(function(el){el.classList.toggle("active",el.getAttribute("data-view")===name)});var title={dashboard:"Dashboard",report:"Laporan",cases:"Insiden Aktif",history:"Riwayat Insiden",schedule:"Jadwal",teams:"Team Check-In",audit:"Activity & Audit",dailyreport:"Daily Reports",cards:"CardSync",insights:"Statistik",decisions:"Rule Assistant",settings:"Pengaturan"};document.getElementById("crumb").textContent=title[name]||"Dashboard";render();window.scrollTo(0,0)}
 function label(st){return {open:"Laporan baru",assigned:"Ditugaskan",progress:"Ditangani",closed:"Selesai"}[st]||"Baru"}
 var activeDateKey="";
 var archiveExpanded={};
@@ -234,6 +299,7 @@ function matchesCase(c,search,status){
 }
 function isUnresolved(c){return c.status!=="closed"}
 function todayCases(){var day=todayKey();return data.cases.filter(function(c){return caseDay(c)===day})}
+function activeCases(){var day=todayKey();return data.cases.filter(function(c){return caseDay(c)===day||isUnresolved(c)})}
 function archivedCases(){var day=todayKey();return data.cases.filter(function(c){return caseDay(c)!==day})}
 function scopedCases(){
  var selected=document.getElementById("analytics-scope").value;
@@ -256,9 +322,9 @@ function caseCard(c){
  return detail;
 }
 function render(){
- var todays=todayCases(),archived=archivedCases();
- var total=todays.length,open=todays.filter(function(c){return c.status==="open"||c.status==="assigned"}).length,
- progress=todays.filter(function(c){return c.status==="progress"}).length,closed=todays.filter(function(c){return c.status==="closed"}).length;
+ var todays=todayCases(),active=activeCases(),archived=archivedCases();
+ var total=active.length,open=active.filter(function(c){return c.status==="open"||c.status==="assigned"}).length,
+ progress=active.filter(function(c){return c.status==="progress"}).length,closed=active.filter(function(c){return c.status==="closed"}).length;
  document.getElementById("m-total").textContent=total;
  document.getElementById("m-open").textContent=open;
  document.getElementById("m-progress").textContent=progress;
@@ -269,17 +335,17 @@ function render(){
  document.getElementById("cases-today-label").textContent=todayName;
  document.getElementById("role-pill").textContent=role==="coordinator"?"ADMIN":role.toUpperCase();
  renderVibrationSettings();
- var recent=todays.slice().reverse().slice(0,4);
+ var recent=active.slice().reverse().slice(0,4);
  document.getElementById("recent").innerHTML=recent.length?recent.map(function(c){
   return '<div class="case"><div><strong>'+safe(c.type)+'</strong><small>'+safe(c.place)+" · "+safe(c.time)+'</small></div><span class="status '+safe(c.status)+'">'+label(c.status)+'</span></div>';
- }).join(""):'<div class="empty">Belum ada insiden hari ini. Laporan sebelumnya tersimpan di Riwayat Insiden.</div>';
+ }).join(""):'<div class="empty">Tidak ada insiden aktif. Kasus yang selesai disimpan di riwayat.</div>';
  renderCases();renderHistory();renderCards();renderChart();
  activeDateKey=todayKey();
 }
 function renderCases(){
  var status=document.getElementById("filter").value,search=document.getElementById("today-search").value.trim();
- var cases=todayCases().slice().reverse().filter(function(c){return matchesCase(c,search,status)});
- document.getElementById("case-list").innerHTML=cases.length?cases.map(caseCard).join(""):'<div class="empty">Tidak ada laporan hari ini yang cocok. Lihat Riwayat Insiden untuk tanggal sebelumnya.</div>';
+ var cases=activeCases().slice().reverse().filter(function(c){return matchesCase(c,search,status)});
+ document.getElementById("case-list").innerHTML=cases.length?cases.map(caseCard).join(""):'<div class="empty">Tidak ada insiden aktif sesuai filter ini.</div>';
 }
 function renderHistory(){
  var old=archivedCases(),groups=Object.create(null);
@@ -446,4 +512,6 @@ setInterval(function(){if(activeDateKey!==todayKey())render()},60000);
 })();
 </script>
 <script src="features-v2.js"></script>
+<script src="vendor/qrcode-generator.js"></script>
+<script src="operations-v3.js"></script>
 </body></html>
