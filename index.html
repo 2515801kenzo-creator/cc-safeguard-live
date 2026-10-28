@@ -160,8 +160,8 @@
 <p class="help">Getaran halaman web umumnya tidak tersedia di iPhone/iPad. Suara perlu interaksi pengguna. Tidak ada notifikasi latar belakang atau antarperangkat.</p></div>
 <div class="panel"><div class="eyebrow">LOCAL DATA</div><h3>Data &amp; penyimpanan</h3>
 <p style="font-size:13px;color:#607484">Skor, tim, jadwal, dan laporan hanya tersimpan pada browser ini; bukan data bersama. Penggunaan resmi memerlukan database, autentikasi, izin, dan persetujuan panitia.</p>
-<div class="actions"><button class="button soft" id="seed-btn" type="button">Muat contoh insiden</button><button class="button soft" id="backup-settings" type="button">↓ Backup JSON</button><button class="button danger" id="clear-btn" type="button">Kosongkan data insiden</button></div>
-<p class="help">Tombol kosongkan data menghapus laporan dan kartu dari browser ini, termasuk arsip. Unduh cadangan sebelum menghapus atau membersihkan data browser. Jangan memasukkan data sensitif.</p></div></div>
+<div class="actions"><button class="button soft" id="seed-btn" type="button">Muat contoh insiden</button><button class="button soft" id="backup-settings" type="button">↓ Backup JSON</button><label class="button soft file-upload" for="restore-input">↑ Pulihkan backup</label><input id="restore-input" type="file" accept=".json,application/json" aria-label="Pilih file backup JSON" class="visually-hidden"><button class="button danger" id="clear-btn" type="button">Kosongkan data insiden</button></div>
+<p class="help">Tombol kosongkan data menghapus laporan dan kartu dari browser ini, termasuk arsip. Backup JSON menyimpan laporan, kartu, skor, dan jadwal. Pemulihan akan mengganti data lokal yang ada. Jangan memasukkan data sensitif.</p></div></div>
 </section>
 <div class="footer">CC SafeGuard Live · Match operations interface · Local Mode. Tidak terhubung ke panitia atau layanan darurat. Gunakan data uji anonim.</div>
 </div></main></div><div class="toast" role="status" aria-live="polite" id="toast"></div>
@@ -389,6 +389,47 @@ document.getElementById("clear-btn").addEventListener("click",function(){if(!con
 document.getElementById("export-btn").addEventListener("click",exportCSV);
 document.getElementById("backup-btn").addEventListener("click",backupAll);
 document.getElementById("backup-settings").addEventListener("click",backupAll);
+document.getElementById("restore-input").addEventListener("change",async function(){
+ var file=this.files&&this.files[0];if(!file)return;
+ if(file.size>2*1024*1024){toast("File lebih dari 2 MB. Tidak dapat dipulihkan.");this.value="";return}
+ try{
+  var obj=JSON.parse(await file.text());
+  if(!obj||obj.schemaVersion!==3||!obj.data||!Array.isArray(obj.data.cases)||!Array.isArray(obj.data.cards)
+    ||obj.data.cases.length>5000||obj.data.cards.length>10000){
+   throw new Error("Format atau ukuran data backup tidak valid");
+  }
+  var statuses=["open","assigned","progress","closed"];
+  var cases=obj.data.cases.map(function(c){
+   if(!c||typeof c!=="object"||!statuses.includes(c.status)||typeof c.id!=="string"||!c.id||c.id.length>100)throw new Error("Isi laporan tidak valid");
+   var txt=function(v,max){return String(v==null?"":v).slice(0,max)};
+   return {id:txt(c.id,100),createdAt:txt(c.createdAt,50),type:txt(c.type,60),priority:txt(c.priority,20),place:txt(c.place,100),reporter:txt(c.reporter,100),detail:txt(c.detail,1500),time:txt(c.time,100),status:c.status,log:Array.isArray(c.log)?c.log.slice(0,80).map(function(t){return txt(t,250)}):[]};
+  });
+  if(new Set(cases.map(function(c){return c.id})).size!==cases.length)throw new Error("ID laporan dalam backup duplikat");
+  var cards=obj.data.cards.map(function(c){
+   if(!c||typeof c!=="object"||!["yellow","red"].includes(c.color))throw new Error("Data kartu tidak valid");
+   var txt=function(v,max){return String(v==null?"":v).slice(0,max)};
+   return {team:txt(c.team,70),jersey:txt(c.jersey,5),match:txt(c.match,50),color:c.color,time:txt(c.time,100),note:txt(c.note,250)};
+  });
+  var schedules=obj.schedule==null?null:obj.schedule;
+  if(schedules!==null&&(!Array.isArray(schedules)||schedules.length>100))throw new Error("Format jadwal tidak valid");
+  if(!confirm("Pulihkan "+cases.length+" laporan dan "+cards.length+" kartu? Data lokal yang sekarang akan diganti. Lanjutkan?")){this.value="";return}
+  var prepared=JSON.stringify({cases:cases,cards:cards});
+  localStorage.setItem(KEY,prepared);
+  if(obj.match&&typeof obj.match==="object"&&!Array.isArray(obj.match)){
+   var m=obj.match;
+   var homeScore=Number(m.homeScore),awayScore=Number(m.awayScore);
+   localStorage.setItem("cc_safeguard_match_v3",JSON.stringify({home:String(m.home||"").slice(0,48),away:String(m.away||"").slice(0,48),homeScore:Number.isInteger(homeScore)&&homeScore>=0&&homeScore<=99?homeScore:0,awayScore:Number.isInteger(awayScore)&&awayScore>=0&&awayScore<=99?awayScore:0,state:["Belum dimulai","Berlangsung","Istirahat","Selesai","Ditunda"].includes(m.state)?m.state:"Belum dimulai",venue:String(m.venue||"").slice(0,80)}));
+  }
+  if(schedules!==null){
+   var valid=schedules.filter(function(s){return s&&typeof s==="object"}).map(function(s){
+    return {id:String(s.id||"").slice(0,100),home:String(s.home||"").slice(0,48),away:String(s.away||"").slice(0,48),date:String(s.date||"").slice(0,10),time:String(s.time||"").slice(0,5),venue:String(s.venue||"").slice(0,80)};
+   });
+   localStorage.setItem("cc_safeguard_schedule_v3",JSON.stringify(valid));
+  }
+  data={cases:cases,cards:cards};archiveExpanded={};render();toast("Backup dipulihkan. Muat ulang halaman untuk menyegarkan scoreboard dan jadwal.");
+ }catch(e){toast("Pemulihan gagal: "+(e&&e.message?e.message:"File tidak bisa dibaca"))}
+ this.value="";
+});
 
 window.addEventListener("storage",function(e){
  if(e.key===VIBRATION_KEY){renderVibrationSettings();return}
