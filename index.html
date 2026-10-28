@@ -418,15 +418,22 @@ document.getElementById("archive-list").addEventListener("toggle",function(e){
 },true);
 document.getElementById("incident-form").addEventListener("submit",function(e){e.preventDefault();if(role==="viewer"){toast("Pengamat tidak dapat membuat laporan");return}
  var created=new Date();var c={id:id(),createdAt:created.toISOString(),type:document.getElementById("type").value,priority:document.getElementById("priority").value,place:document.getElementById("place").value,reporter:document.getElementById("reporter").value.trim(),detail:document.getElementById("detail").value.trim(),time:now(),status:"open",log:["Laporan dicatat pada "+now()]};
- if(!c.reporter||!c.detail){toast("Lengkapi nama petugas fiktif dan kronologi objektif.");return}data.cases.push(c);save();alertNewIncident();this.reset();toast("Laporan demo tersimpan di browser.");nav("cases")
+ if(!c.reporter||!c.detail){toast("Lengkapi nama petugas dan kronologi objektif.");return}
+ data.cases.push(c);save();
+ if(window.CCSafeAudit)window.CCSafeAudit("incident_created","incident:"+c.id,null,{id:c.id,createdAt:c.createdAt,type:c.type,status:c.status});
+ if(window.CCSafeQueue)window.CCSafeQueue(c);
+ alertNewIncident();this.reset();toast("Laporan tersimpan lokal; BELUM dikirim ke server.");nav("cases")
 });
 function handleStatusUpdate(e){var b=e.target.closest("[data-act]");if(!b)return;var c=data.cases.find(function(c){return c.id===b.dataset.id});if(!c)return;
  var act=b.dataset.act;
  if((act==="assign"||act==="close")&&role!=="coordinator"){toast("Hanya koordinator yang dapat melakukan ini");return}
  if(act==="progress"&&role==="viewer"){toast("Pengamat hanya dapat melihat");return}
+ var previous={status:c.status};
  if(act==="assign"&&c.status==="open")c.status="assigned";else if(act==="progress"&&c.status==="assigned")c.status="progress";else if(act==="close"&&c.status==="progress")c.status="closed";else{return}
  if(!Array.isArray(c.log))c.log=[];
- c.log.push(label(c.status)+" · "+now()+" · "+role);save();render();toast("Status diperbarui.");
+ c.log.push(label(c.status)+" · "+now()+" · "+role);
+ save();if(window.CCSafeAudit)window.CCSafeAudit("incident_status","incident:"+c.id,previous,{status:c.status});
+ render();if(window.CCSafeRefresh)window.CCSafeRefresh();toast("Status diperbarui.");
 }
 document.getElementById("case-list").addEventListener("click",handleStatusUpdate);
 document.getElementById("archive-list").addEventListener("click",handleStatusUpdate);
@@ -438,7 +445,10 @@ document.getElementById("card-form").addEventListener("submit",function(e){e.pre
  var yellow=cardsForPlayer.filter(function(c){return c.color==="yellow"}).length;
  var result=kind==="red"||yellow>=1?"red":"yellow";
  var note=kind==="red"?"Kartu merah langsung menurut keputusan wasit.":yellow>=1?"Kartu kuning kedua pada pertandingan ini menjadi merah.":"Kartu kuning pertama pada pertandingan ini.";
- data.cards.push({team:team,jersey:jersey,match:match,color:result,time:now(),note:note});save();render();this.reset();toast(note)
+ var before=cardsForPlayer.map(function(card){return {color:card.color,time:card.time}});
+ data.cards.push({team:team,jersey:jersey,match:match,color:result,time:now(),note:note});save();
+ if(window.CCSafeAudit)window.CCSafeAudit("referee_card_recorded","card:"+match+":"+team+":"+jersey,before,{color:result,match:match,team:team,jersey:jersey});
+ render();this.reset();toast(note)
 });
 document.getElementById("role").addEventListener("change",function(){role=this.value;localStorage.setItem(ROLE_KEY,role);render();toast("Peran simulasi diganti: "+role)});
 document.getElementById("vibrate-enabled").addEventListener("change",function(){
@@ -450,8 +460,11 @@ document.getElementById("vibrate-test").addEventListener("click",function(){
  var ok=vibrateOnce();
  toast(ok?"Perintah tes getaran dikirim ke perangkat.":"Getaran tidak dijalankan. Pastikan halaman aktif dan perangkat mendukungnya.");
 });
-document.getElementById("seed-btn").addEventListener("click",function(){if(data.cases.length){if(!confirm("Tambahkan skenario demo lain ke daftar?"))return}data.cases.push({id:id(),createdAt:new Date().toISOString(),type:"Dorong-dorongan",priority:"tinggi",place:"Lapangan mini soccer",reporter:"Marshal A (simulasi)",detail:"Contoh fiktif: dua pemain saling mendorong setelah perebutan bola. Rekan setim segera membantu melerai; petugas memeriksa situasi.",time:now(),status:"open",log:["Skenario latihan dibuat "+now()]} );save();render();alertNewIncident();toast("Skenario fiktif berhasil dimuat");nav("cases")});
-document.getElementById("clear-btn").addEventListener("click",function(){if(!confirm("Hapus SEMUA laporan, arsip insiden, dan catatan kartu dari browser ini? Tindakan ini tidak dapat dibatalkan. Cadangkan JSON dahulu jika diperlukan."))return;data={cases:[],cards:[]};save();render();toast("Data demo lokal sudah dikosongkan")});
+document.getElementById("seed-btn").addEventListener("click",function(){if(data.cases.length){if(!confirm("Tambahkan skenario demo lain ke daftar?"))return}data.cases.push({id:id(),createdAt:new Date().toISOString(),type:"Dorong-dorongan",priority:"tinggi",place:"Lapangan mini soccer",reporter:"Marshal A (simulasi)",detail:"Contoh fiktif: dua pemain saling mendorong setelah perebutan bola. Rekan setim segera membantu melerai; petugas memeriksa situasi.",time:now(),status:"open",log:["Skenario latihan dibuat "+now()]} );save();var newly=data.cases[data.cases.length-1];if(window.CCSafeQueue)window.CCSafeQueue(newly);if(window.CCSafeAudit)window.CCSafeAudit("incident_created","incident:"+newly.id,null,{id:newly.id,type:newly.type,status:newly.status});
+ render();alertNewIncident();toast("Contoh insiden tersimpan lokal.");nav("cases")});
+document.getElementById("clear-btn").addEventListener("click",function(){if(!confirm("Hapus SEMUA laporan, arsip insiden, dan catatan kartu dari browser ini? Tindakan ini tidak dapat dibatalkan. Cadangkan JSON dahulu jika diperlukan."))return;var erased={cases:data.cases.length,cards:data.cards.length};data={cases:[],cards:[]};save();localStorage.removeItem("ccsl_queue_v3");
+ if(window.CCSafeAudit)window.CCSafeAudit("local_records_cleared","incident_records",erased,{cases:0,cards:0});
+ render();if(window.CCSafeRefresh)window.CCSafeRefresh();toast("Laporan, kartu, dan antrean lokal dikosongkan")});
 document.getElementById("export-btn").addEventListener("click",exportCSV);
 document.getElementById("backup-btn").addEventListener("click",backupAll);
 document.getElementById("backup-settings").addEventListener("click",backupAll);
