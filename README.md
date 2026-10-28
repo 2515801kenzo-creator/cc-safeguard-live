@@ -14,6 +14,62 @@ An interactive mini-soccer match-operations dashboard for CC Cup XLI, maintained
 - **Notifications:** opt-in vibration on compatible devices, opt-in sound and a visual alert for new local incident reports. Includes an alert test button.
 - **Statistics:** counts and local CSV export.
 
+## New operations modules (October 2026)
+
+### Team Lobby & QR Check-In
+1. Open **Pengaturan** and choose **Admin (demo)**.
+2. Open **Team Check-In**, enter a fictional team name and select **Buat lobby tim**.
+3. The created team has a code such as `TEAM-XXXXXXXX`. On the same browser, a participant can enter that code, a fictional participant alias, and select QR expiry: 1–168 hours, a custom date/time, or the kickoff of a schedule involving that team.
+4. On successful registration, the app generates a **unique opaque 128-bit QR token**, rendered locally using the MIT-licensed `qrcode-generator` library. It includes **no participant name** in the QR payload.
+5. For check-in, use **Scan kamera** or manually enter the code printed below the QR. The camera supports native BarcodeDetector where available and a local jsQR fallback.
+6. The team progresses **Belum hadir → Sudah hadir → Siap bertanding**. The last status can be set by Admin (demo) after all listed members check in.
+7. Expired, unknown, duplicate or replaced QR codes are refused in the local register. An admin can reissue a pass, invalidating its previous code.
+
+**Critical limitation:** codes are validated only against the local browser roster. The team lobby is **not hosted on a shared database** and cannot yet register participants from separate phones or offer secure event access. The local Admin switch is **not login**. Never use this as official admission/identity proof.
+
+### Smart Schedule Conflict Detector
+The **Jadwal pertandingan** form now includes a required **lapangan** and **durasi**. It compares time intervals, normalized pitch names, and both participating teams. A new schedule is rejected when the same pitch or same team would be double-booked. The form shows a conflict preview. Existing fixture records without duration are treated as 60 minutes.
+
+### Daily Auto Archive 2.0
+Dashboard and **Insiden Aktif** show reports filed today **plus any older unfinished incidents**, so pending cases remain actionable after midnight. All previous-day cases continue to be accessible in expandable **Riwayat Insiden** date groups. Closing a pending case removes it from the active list on the next render if it was created on an earlier day, without deleting its history.
+
+### Activity & Audit Log
+- Scoreboard changes and resets; schedule additions/deletions.
+- Incident creation and status transitions; card entries.
+- Team creation, registration, check-in, readiness and pass reissues.
+- Rule Assistant consultation events (not official decisions).
+- Each entry has timestamp, local operator label/role, target, and before/after values where relevant.
+- The most recent 1,500 events are stored locally and can be exported.
+
+**This is not a tamper-proof audit:** any user can choose an actor label, use browser tools, edit/remove localStorage, or switch roles. Production audit must be written on a trusted server with verified user identities and access policies.
+
+### Automatic Daily Report
+Under **Daily Reports**, choose a date to see scheduled matches, incident count, closed/unresolved incidents, backlog from previous dates, and average time to the first status update **when the audit contains enough timestamps**. Missing response data is shown as unavailable; none is invented. The report can be exported to CSV. It is calculated when opened or its date changes; it is not automatically emailed.
+
+### Offline Report Queue and installable web app
+- A service worker caches the static app shell after a successful online visit, allowing the installed/visited site to open offline on compatible browsers.
+- A locally created incident is persisted in localStorage and marked as **pending** with a unique queue event ID.
+- The network indicator says **offline** or **local / waiting for server**, never falsely "synced".
+- **No backend exists in this GitHub Pages deployment.** Therefore reconnecting to Wi-Fi does **not** upload reports. The Retry button reports this accurately. Real automatic delivery requires a configured authenticated server, idempotent event processing, acknowledgement and retry logic.
+- Browser storage can be cleared; use **Backup JSON** regularly. Backup v4 includes teams, QR tokens, audit events and pending queue in addition to the previous incident/card/score/fixture data. **Keep backup files private** because QR tokens enable demo check-ins. Previous v3 backup files are accepted.
+- HTTPS, browser camera permission and a compatible browser are required for camera scanning. Manual QR code entry remains available.
+
+### Files and third-party notices
+- `operations-v3.js`: team lobby, QR check-in, conflict detection, audit log, daily report, and local pending queue.
+- `vendor/qrcode-generator.js`: QR generator © Kazuhiko Arase, **MIT**; see `vendor/qrcode-generator-LICENSE.txt`.
+- `vendor/jsQR.js`: QR camera decoder © its respective authors, **Apache-2.0**; see `vendor/jsQR-LICENSE.txt`.
+- `sw.js`, `manifest.webmanifest`, `assets/safeguard-icon.svg`: app-shell offline support and installable metadata.
+
+### Acceptance tests
+- [ ] Admin creates a team and confirms unique team code; participant registers with that code **on the same browser**.
+- [ ] Each participant receives a scannable unique QR and an expiry; unknown/expired/duplicate QR is rejected.
+- [ ] Reissued QR invalidates the old token, and all checked-in members allow Admin to mark team ready.
+- [ ] Two fixtures overlapping on the same pitch or sharing a team are rejected; adjacent times are allowed.
+- [ ] Yesterday's unfinished incident still appears in **Insiden Aktif**, while a completed old incident is in history only.
+- [ ] Score changes, schedule edits and incident transitions add timestamped before/after audit entries.
+- [ ] Daily report totals, backlog, and response metrics match recorded local data.
+- [ ] Offline page reload works after the service worker has installed and cached assets; the pending queue never claims delivery without a backend.
+
 ## Daily incident archive (auto-organized by date)
 - **Dashboard** and **Insiden Hari Ini** show only reports created on the current local calendar day.
 - At midnight (or when the page is resumed the next day), yesterday's reports disappear from today's feed **without being deleted**.
