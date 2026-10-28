@@ -1,46 +1,62 @@
-# CC SafeGuard Live — ITG CC Cup XLI 2026
+# CC SafeGuard Live
 
-**Prototipe pendidikan independen** untuk menguji alur penanganan insiden pertandingan mini soccer. Belum merupakan aplikasi resmi Kolese Kanisius atau panitia CC Cup.
+An interactive mini-soccer match-operations dashboard for CC Cup XLI, maintained in the repository owner's GitHub account.
 
-## Cara membuka
-Website ada dalam satu file `index.html` tanpa instalasi. Setelah GitHub Pages diaktifkan: Settings → Pages → Source: Deploy from a branch → main → /(root) → Save.
+**Website:** https://2515801kenzo-creator.github.io/cc-safeguard-live/
 
-## Fitur demo
-- Match dashboard & ringkasan insiden
-- Form laporan cepat untuk petugas
-- Alur: laporan baru → ditugaskan → sedang ditangani → selesai
-- Riwayat tindak lanjut per kasus
-- CardSync untuk mendokumentasikan keputusan wasit (bukan mengambil keputusan otomatis)
-- Analisis kategori dan ekspor CSV
-- Materi integrasi PJOK, PPKn, Bahasa Indonesia dan Informatika
-- Tampilan responsif untuk laptop dan ponsel
+## Features
+- **Match Control Center:** clean dashboard, incident metrics, quick actions and upcoming matches.
+- **Scoreboard:** defaults to **0–0** with **Tim A / Tim B** as placeholders. Admin (demo) can assign names, score, match state, and venue via **Pengaturan**.
+- **Schedule:** empty at first. Admin (demo) can add matches with team names, date, time and venue, and delete entries.
+- **Incident reporting:** category, priority, objective chronology and a local handling flow.
+- **Rule Assistant:** decision-support guidance for typical situations and safety priorities; it never substitutes for the referee's official decision or the competition SOP.
+- **CardSync:** records confirmed cards by team, jersey number and match code; tracks two yellows and prevents an additional card after a recorded red for that player in the same match.
+- **Notifications:** opt-in vibration on compatible devices, opt-in sound and a visual alert for new local incident reports. Includes an alert test button.
+- **Statistics:** counts and local CSV export.
 
-## Cara menguji
-1. Buka **Pengaturan**, klik **Muat skenario fiktif**.
-2. Masuk **Pusat penanganan**, tekan **Tugaskan petugas**, **Sedang ditangani**, lalu **Konfirmasi selesai**.
-3. Kembali ke Dashboard untuk melihat status.
-4. Pilih **Laporkan insiden** untuk menulis laporan demonstrasi tanpa informasi pribadi.
-5. Coba **CardSync** dan **Analisis**.
+## Quick start
+1. Visit the website and open **Pengaturan**.
+2. Select **Admin (demo)** if needed.
+3. Under **Kelola scoreboard**, add two team names, match state, venue and scores. The default is 0–0.
+4. Open **Jadwal pertandingan** to add matches (it begins blank).
+5. Open **Rule Assistant** to try a scenario.
+6. To try alerts, enable sound/vibration in **Pengaturan** and select the test button.
+7. Use **Lapor insiden** for a fictional example, then review the report in **Pusat insiden**.
 
-## Keamanan dan batasan
-- Data hanya tersimpan di **localStorage** browser. **Belum sinkron langsung antar-HP** dan tidak mengirim pemberitahuan ke panitia.
-- Pergantian peran di **Pengaturan** hanya simulasi, bukan autentikasi aman.
-- Gunakan data fiktif. Jangan masukkan nama siswa, nomor telepon, foto sensitif, atau tuduhan pribadi.
-- Jangan mengandalkan website sebagai saluran darurat atau pengganti tindakan petugas di lapangan.
-- Verifikasi hasil observasi kelompok sebelum membuat klaim publik tentang insiden.
-- Keputusan wasit tidak boleh digantikan algoritma.
-- Logo resmi sekolah dan CC Cup belum dibenamkan pada **versi satu-file** ini; tampilan memakai monogram teks **CC**. Penggunaan logo asli untuk publikasi membutuhkan izin yang sesuai.
+## Important limitations
+This is a **browser-only local version**, not yet a centrally deployed event-management backend:
 
-## Landasan pembelajaran
-- **PJOK:** aturan dan sportivitas mini soccer, keselamatan
-- **PPKn:** kepatuhan, kewenangan, dan tanggung jawab, dengan hierarki peraturan negara dibahas secara tersendiri
-- **Bahasa Indonesia:** kronologi dan laporan objektif
-- **Informatika:** logika status, formulir, validasi dan penyimpanan browser
+- The scoreboard, match schedule, incident data, and cards use browser **localStorage**, so they **DO NOT synchronize between devices**. Changing a match on Admin's phone does not update another user's phone.
+- **Admin (demo)** is a UI role selector, **not secure authentication or authorization**.
+- There are **no remote push alerts** or background notifications. Alerts run on the local active page.
+- A website cannot force haptic vibration on all devices. Browser Vibration API support is device-specific; iOS Safari/iPhone browsers generally do not support web-page vibration. Sound/visual alerts are the fallback, and sound may need user interaction.
+- Rule Assistant supplies **general situational guidance**, not official interpretations, disciplinary rulings, a video-analysis AI, or legal advice. Consult the current CC Cup SOP, referee, and event organizer.
+- Do not use this page as an official safety channel or emergency response service. For real emergencies contact qualified staff immediately.
+- Do not enter personal data about minors, allegations, private contacts or other sensitive event information.
+- Do not represent the project as officially endorsed by the school or event unless permission is granted.
 
-Sumber: SOP Mini Soccer CC Cup XLI yang disediakan kelompok; Konsep ITG Kelas 8; Rubrik PJOK Kelas 8; https://www.theifab.com/laws/latest/
+## Technical files
+- `index.html`: main HTML, legacy incident workflow and CardSync.
+- `ui-v2.css`: interface improvements, responsive navigation and match layout.
+- `features-v2.js`: scoreboard, schedule, rule guidance and audio/visual/vibration alerts.
 
-## Kolaborasi
-Owner repo mengundang teman melalui **Settings → Collaborators → Add people**. Kerjakan perubahan pada branch terpisah lalu ajukan Pull Request untuk review sebelum merge.
+## Publish with GitHub Pages
+In the repository: **Settings → Pages → Deploy from a branch → main → /(root) → Save**.
 
-## Pengembangan lanjutan
-Integrasi Firebase Authentication + Firestore dengan aturan akses aman, sinkronisasi antar perangkat, logo berizin, dan validasi panitia diperlukan untuk versi operasional.
+## Suggested acceptance checklist
+- [ ] Dashboard initial state shows **0–0**, placeholder teams, empty schedule, and no fabricated incidents.
+- [ ] Admin updates scoreboard and refresh preserves it in the same browser.
+- [ ] Admin adds two schedule items; they display chronologically and can be deleted.
+- [ ] Rule Assistant provides guidance for injury and red-card scenarios without assigning official blame.
+- [ ] New local report updates the incident metrics, and workflow states move correctly.
+- [ ] Vibration test works on a supported Android browser when enabled.
+- [ ] On an iPhone/unsupported browser, vibration status reports unsupported and visual alert is available.
+- [ ] Sound/visual test works after user interaction (device/browser permitting).
+- [ ] Responsive navigation and forms work on smartphone and laptop.
+- [ ] No personal real-world student data is entered.
+
+## Collaboration
+Only the repository owner controls collaborator access. Review major changes on a separate branch and merge via pull request after testing.
+
+## For a multi-device production edition
+Add a centrally secured backend (e.g. Firebase Auth + Firestore), validated role permissions, server-generated timestamps, matching event IDs, data retention rules, organizer authorization, real-time subscriptions, and Web Push/approved native notifications. A native iOS app is needed for reliable device haptics beyond ordinary web support.
