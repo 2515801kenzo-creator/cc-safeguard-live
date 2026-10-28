@@ -305,22 +305,65 @@ function renderCards(){
  document.getElementById("card-list").innerHTML=data.cards.length?data.cards.slice().reverse().map(function(c){return '<div class="case"><div><strong>'+safe(c.team)+" · #"+safe(c.jersey)+'</strong><small>'+safe(c.match||"Pertandingan belum dicatat")+" · "+safe(c.time)+" · "+safe(c.note)+'</small></div><span class="status '+(c.color==="red"?"open":"closed")+'">'+(c.color==="red"?"MERAH":"KUNING")+"</span></div>"}).join(""):'<div class="empty">Belum ada catatan kartu.</div>'
 }
 function renderChart(){
- var types=["Dorong-dorongan","Cedera","Gangguan penonton","Ketertiban"],counts=types.map(function(t){return data.cases.filter(function(c){return c.type===t}).length}),max=Math.max(1,...counts);
- document.getElementById("bars").innerHTML=types.map(function(t,i){return '<div><div class="barline"><span>'+safe(t)+'</span><span>'+counts[i]+'</span></div><div class="bar"><div style="width:'+(counts[i]/max*100)+'%"></div></div></div>'}).join("")
+ var cases=scopedCases();
+ var types=["Dorong-dorongan","Cedera","Gangguan penonton","Ketertiban"];
+ var counts=types.map(function(t){return cases.filter(function(c){return c.type===t}).length});
+ var max=Math.max(1,...counts);
+ document.getElementById("analytics-total").textContent=cases.length;
+ document.getElementById("analytics-unresolved").textContent=cases.filter(isUnresolved).length;
+ document.getElementById("analytics-resolved").textContent=cases.filter(function(c){return c.status==="closed"}).length;
+ document.getElementById("bars").innerHTML=types.map(function(t,i){return '<div><div class="barline"><span>'+safe(t)+'</span><span>'+counts[i]+'</span></div><div class="bar"><div style="width:'+(counts[i]/max*100)+'%"></div></div></div>'}).join("");
+}
+function downloadLocalFile(filename,mime,content){
+ var file=new Blob(content,{type:mime}),url=URL.createObjectURL(file);
+ var a=document.createElement("a");a.href=url;a.download=filename;
+ document.body.appendChild(a);a.click();a.remove();
+ setTimeout(function(){URL.revokeObjectURL(url)},2000);
+}
+function backupAll(){
+ var snap={schemaVersion:3,exportedAt:new Date().toISOString(),source:"CC SafeGuard Live · browser backup",data:data,match:null,schedule:null};
+ try{snap.match=JSON.parse(localStorage.getItem("cc_safeguard_match_v3")||"null")}catch(e){}
+ try{snap.schedule=JSON.parse(localStorage.getItem("cc_safeguard_schedule_v3")||"null")}catch(e){}
+ downloadLocalFile("cc-safeguard-backup-"+todayKey()+".json","application/json;charset=utf-8",[JSON.stringify(snap,null,2)]);
+ toast("File cadangan diunduh. Simpan di tempat aman.");
+}
+function exportCSV(){
+ var rows=[["ID","Tanggal laporan","Waktu","Jenis","Prioritas","Lokasi","Petugas","Status","Kronologi","Log tindakan"]];
+ scopedCases().forEach(function(c){
+  rows.push([c.id,caseDay(c),c.time,c.type,c.priority,c.place,c.reporter,label(c.status),c.detail,Array.isArray(c.log)?c.log.join(" | "):""]);
+ });
+ var csv=rows.map(function(row){return row.map(function(x){
+  var s=String(x==null?"":x);
+  if(/^\s*[=+\-@\t\r\n]/.test(s))s="'"+s;
+  return '"'+s.replace(/"/g,'""')+'"';
+ }).join(",")}).join("\r\n");
+ downloadLocalFile("cc-safeguard-insiden-"+document.getElementById("analytics-scope").value+"-"+todayKey()+".csv","text/csv;charset=utf-8",["\ufeff",csv]);
+ toast("CSV laporan berhasil disiapkan.");
 }
 document.querySelectorAll("[data-view]").forEach(function(b){b.addEventListener("click",function(){nav(b.getAttribute("data-view"))})});
 document.getElementById("filter").addEventListener("change",renderCases);
+document.getElementById("today-search").addEventListener("input",renderCases);
+document.getElementById("history-search").addEventListener("input",renderHistory);
+document.getElementById("history-status").addEventListener("change",renderHistory);
+document.getElementById("analytics-scope").addEventListener("change",renderChart);
+document.getElementById("archive-list").addEventListener("toggle",function(e){
+ var el=e.target;
+ if(el&&el.matches&&el.matches("details.archive-folder"))archiveExpanded[el.getAttribute("data-archive-day")]=el.open;
+},true);
 document.getElementById("incident-form").addEventListener("submit",function(e){e.preventDefault();if(role==="viewer"){toast("Pengamat tidak dapat membuat laporan");return}
- var c={id:id(),type:document.getElementById("type").value,priority:document.getElementById("priority").value,place:document.getElementById("place").value,reporter:document.getElementById("reporter").value.trim(),detail:document.getElementById("detail").value.trim(),time:now(),status:"open",log:["Laporan dicatat pada "+now()]};
+ var created=new Date();var c={id:id(),createdAt:created.toISOString(),type:document.getElementById("type").value,priority:document.getElementById("priority").value,place:document.getElementById("place").value,reporter:document.getElementById("reporter").value.trim(),detail:document.getElementById("detail").value.trim(),time:now(),status:"open",log:["Laporan dicatat pada "+now()]};
  if(!c.reporter||!c.detail){toast("Lengkapi nama petugas fiktif dan kronologi objektif.");return}data.cases.push(c);save();alertNewIncident();this.reset();toast("Laporan demo tersimpan di browser.");nav("cases")
 });
-document.getElementById("case-list").addEventListener("click",function(e){var b=e.target.closest("[data-act]");if(!b)return;var c=data.cases.find(function(c){return c.id===b.dataset.id});if(!c)return;
+function handleStatusUpdate(e){var b=e.target.closest("[data-act]");if(!b)return;var c=data.cases.find(function(c){return c.id===b.dataset.id});if(!c)return;
  var act=b.dataset.act;
  if((act==="assign"||act==="close")&&role!=="coordinator"){toast("Hanya koordinator yang dapat melakukan ini");return}
  if(act==="progress"&&role==="viewer"){toast("Pengamat hanya dapat melihat");return}
  if(act==="assign"&&c.status==="open")c.status="assigned";else if(act==="progress"&&c.status==="assigned")c.status="progress";else if(act==="close"&&c.status==="progress")c.status="closed";else{return}
- c.log.push(label(c.status)+" · "+now()+" · "+role);save();render();toast("Status diperbarui (demo).");
-});
+ if(!Array.isArray(c.log))c.log=[];
+ c.log.push(label(c.status)+" · "+now()+" · "+role);save();render();toast("Status diperbarui.");
+}
+document.getElementById("case-list").addEventListener("click",handleStatusUpdate);
+document.getElementById("archive-list").addEventListener("click",handleStatusUpdate);
 document.getElementById("card-form").addEventListener("submit",function(e){e.preventDefault();if(role!=="coordinator"){toast("Hanya koordinator yang bisa mencatat keputusan wasit pada demo");return}
  var team=document.getElementById("card-team").value,jersey=document.getElementById("jersey").value,kind=document.getElementById("card-kind").value,match=document.getElementById("card-match").value.trim().toUpperCase();
  if(!team||!match){toast("Pilih tim dan isi kode pertandingan.");return}
@@ -341,9 +384,12 @@ document.getElementById("vibrate-test").addEventListener("click",function(){
  var ok=vibrateOnce();
  toast(ok?"Perintah tes getaran dikirim ke perangkat.":"Getaran tidak dijalankan. Pastikan halaman aktif dan perangkat mendukungnya.");
 });
-document.getElementById("seed-btn").addEventListener("click",function(){if(data.cases.length){if(!confirm("Tambahkan skenario demo lain ke daftar?"))return}data.cases.push({id:id(),type:"Dorong-dorongan",priority:"tinggi",place:"Lapangan mini soccer",reporter:"Marshal A (simulasi)",detail:"Contoh fiktif: dua pemain saling mendorong setelah perebutan bola. Rekan setim segera membantu melerai; petugas memeriksa situasi.",time:now(),status:"open",log:["Skenario latihan dibuat "+now()]} );save();render();alertNewIncident();toast("Skenario fiktif berhasil dimuat");nav("cases")});
-document.getElementById("clear-btn").addEventListener("click",function(){if(!confirm("Hapus seluruh data demonstrasi dari browser ini?"))return;data={cases:[],cards:[]};save();render();toast("Data demo lokal sudah dikosongkan")});
-document.getElementById("export-btn").addEventListener("click",function(){var rows=[["ID","Waktu","Jenis","Prioritas","Lokasi","Petugas","Status","Kronologi"]];data.cases.forEach(function(c){rows.push([c.id,c.time,c.type,c.priority,c.place,c.reporter,label(c.status),c.detail])});var text=rows.map(function(row){return row.map(function(x){var s=String(x);if(/^[\s]*[=+\-@]/.test(s))s="'"+s;return '"'+s.replace(/"/g,'""')+'"'}).join(",")}).join("\r\n");var a=document.createElement("a");a.href=URL.createObjectURL(new Blob(["\ufeff",text],{type:"text/csv;charset=utf-8"}));a.download="cc-safeguard-laporan-demo.csv";a.click();setTimeout(function(){URL.revokeObjectURL(a.href)},4000)});
+document.getElementById("seed-btn").addEventListener("click",function(){if(data.cases.length){if(!confirm("Tambahkan skenario demo lain ke daftar?"))return}data.cases.push({id:id(),createdAt:new Date().toISOString(),type:"Dorong-dorongan",priority:"tinggi",place:"Lapangan mini soccer",reporter:"Marshal A (simulasi)",detail:"Contoh fiktif: dua pemain saling mendorong setelah perebutan bola. Rekan setim segera membantu melerai; petugas memeriksa situasi.",time:now(),status:"open",log:["Skenario latihan dibuat "+now()]} );save();render();alertNewIncident();toast("Skenario fiktif berhasil dimuat");nav("cases")});
+document.getElementById("clear-btn").addEventListener("click",function(){if(!confirm("Hapus SEMUA laporan, arsip insiden, dan catatan kartu dari browser ini? Tindakan ini tidak dapat dibatalkan. Cadangkan JSON dahulu jika diperlukan."))return;data={cases:[],cards:[]};save();render();toast("Data demo lokal sudah dikosongkan")});
+document.getElementById("export-btn").addEventListener("click",exportCSV);
+document.getElementById("backup-btn").addEventListener("click",backupAll);
+document.getElementById("backup-settings").addEventListener("click",backupAll);
+
 window.addEventListener("storage",function(e){
  if(e.key===VIBRATION_KEY){renderVibrationSettings();return}
  if(e.key===KEY){
@@ -352,7 +398,10 @@ window.addEventListener("storage",function(e){
   if(data.cases.some(function(c){return !previousIds.has(c.id)})){alertNewIncident();toast("Ada laporan demo baru di tab website ini.");}
  }
 });
-load();render()
+load();render();
+document.addEventListener("visibilitychange",function(){if(document.visibilityState==="visible"&&activeDateKey!==todayKey())render()});
+window.addEventListener("focus",function(){if(activeDateKey!==todayKey())render()});
+setInterval(function(){if(activeDateKey!==todayKey())render()},60000);
 })();
 </script>
 <script src="features-v2.js"></script>
