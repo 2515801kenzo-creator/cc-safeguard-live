@@ -39,6 +39,16 @@ function renderMatch(){
  setText("match-state",cfg.state||"Belum dimulai");
  setText("match-venue",cfg.venue||"Lokasi belum diatur");
  setText("match-team-caption",cfg.home&&cfg.away?"Tim sudah ditetapkan oleh admin":"Nama tim belum ditetapkan oleh admin");
+ var cardTeam=$("card-team");
+ if(cardTeam){
+  var previous=cardTeam.value;
+  cardTeam.replaceChildren();
+  var blank=document.createElement("option");blank.value="";blank.textContent="Pilih tim dari scoreboard";cardTeam.appendChild(blank);
+  [cfg.home,cfg.away].filter(Boolean).forEach(function(name){
+   var option=document.createElement("option");option.value=name;option.textContent=name;cardTeam.appendChild(option);
+  });
+  if([cfg.home,cfg.away].includes(previous))cardTeam.value=previous;
+ }
  var form=$("match-admin-form");
  if(form && document.activeElement && !form.contains(document.activeElement)){
   $("admin-home").value=cfg.home;$("admin-away").value=cfg.away;
