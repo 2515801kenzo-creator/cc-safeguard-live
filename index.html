@@ -89,7 +89,7 @@
 <section class="view" id="cards">
  <div class="heading"><div><div class="eyebrow">DISCIPLINE RECORD</div><h1>CardSync.</h1><p>Mencatat kartu setelah keputusan wasit, bukan memutuskan kesalahan menggunakan AI.</p></div></div>
  <div class="info-strip" style="margin-bottom:19px"><i>ⓘ</i><span>Dua kartu kuning pada pemain yang sama dalam satu pertandingan menghasilkan kartu merah. Hukuman berikutnya tetap mengikuti SOP resmi.</span></div>
- <div class="cols"><div class="panel"><h3>Catat kartu yang telah diputuskan wasit</h3><form id="card-form"><div class="field"><label for="card-team">Tim</label><select id="card-team"><option>CC B SMA</option><option>Penabur</option><option>Tim latihan (fiktif)</option></select></div><div class="field"><label for="jersey">Nomor punggung</label><input id="jersey" type="number" min="1" max="99" required placeholder="7"></div><div class="field"><label for="card-kind">Jenis kartu</label><select id="card-kind"><option value="yellow">Kartu kuning</option><option value="red">Kartu merah langsung</option></select></div><button class="button" type="submit">Simpan keputusan wasit (demo)</button></form></div><div class="panel"><h3>Riwayat kartu</h3><div id="card-list"></div></div></div>
+ <div class="cols"><div class="panel"><h3>Catat kartu yang telah diputuskan wasit</h3><form id="card-form"><div class="field"><label for="card-team">Tim</label><select id="card-team" required><option value="">Atur tim di Pengaturan terlebih dahulu</option></select></div><div class="field"><label for="card-match">Kode pertandingan</label><input id="card-match" required maxlength="45" placeholder="Contoh: MATCH-01"></div><div class="field"><label for="jersey">Nomor punggung</label><input id="jersey" type="number" min="1" max="99" required placeholder="7"></div><div class="field"><label for="card-kind">Jenis kartu</label><select id="card-kind"><option value="yellow">Kartu kuning</option><option value="red">Kartu merah langsung</option></select></div><button class="button" type="submit">Simpan keputusan wasit</button></form></div><div class="panel"><h3>Riwayat kartu</h3><div id="card-list"></div></div></div>
 </section>
 <section class="view" id="insights">
  <div class="heading"><div><div class="eyebrow">LEARNING ANALYTICS</div><h1>Analisis & Laporan.</h1><p>Melihat kategori insiden dalam simulasi dan mengekspor data untuk evaluasi kelompok.</p></div><button class="button dark" id="export-btn">↓ Ekspor CSV</button></div>
@@ -184,7 +184,7 @@ function renderCases(){
  }).join(""):'<div class="empty">Tidak ada laporan untuk filter ini.</div>'
 }
 function renderCards(){
- document.getElementById("card-list").innerHTML=data.cards.length?data.cards.slice().reverse().map(function(c){return '<div class="case"><div><strong>'+safe(c.team)+" · #"+safe(c.jersey)+'</strong><small>'+safe(c.time)+" · "+safe(c.note)+'</small></div><span class="status '+(c.color==="red"?"open":"closed")+'">'+(c.color==="red"?"MERAH":"KUNING")+"</span></div>"}).join(""):'<div class="empty">Belum ada catatan kartu dalam demo ini.</div>'
+ document.getElementById("card-list").innerHTML=data.cards.length?data.cards.slice().reverse().map(function(c){return '<div class="case"><div><strong>'+safe(c.team)+" · #"+safe(c.jersey)+'</strong><small>'+safe(c.match||"Pertandingan belum dicatat")+" · "+safe(c.time)+" · "+safe(c.note)+'</small></div><span class="status '+(c.color==="red"?"open":"closed")+'">'+(c.color==="red"?"MERAH":"KUNING")+"</span></div>"}).join(""):'<div class="empty">Belum ada catatan kartu.</div>'
 }
 function renderChart(){
  var types=["Dorong-dorongan","Cedera","Gangguan penonton","Ketertiban"],counts=types.map(function(t){return data.cases.filter(function(c){return c.type===t}).length}),max=Math.max(1,...counts);
@@ -204,8 +204,14 @@ document.getElementById("case-list").addEventListener("click",function(e){var b=
  c.log.push(label(c.status)+" · "+now()+" · "+role);save();render();toast("Status diperbarui (demo).");
 });
 document.getElementById("card-form").addEventListener("submit",function(e){e.preventDefault();if(role!=="coordinator"){toast("Hanya koordinator yang bisa mencatat keputusan wasit pada demo");return}
- var team=document.getElementById("card-team").value,jersey=document.getElementById("jersey").value,kind=document.getElementById("card-kind").value;var yellow=data.cards.filter(function(c){return c.team===team&&c.jersey===jersey&&c.color==="yellow"}).length;var result=kind==="red"||yellow>=1?"red":"yellow";var note=kind==="red"?"Kartu merah langsung sesuai keputusan wasit — periksa kelayakan pertandingan berikutnya.":yellow>=1?"Kartu kuning kedua dalam pertandingan demo — menjadi kartu merah.":"Kartu kuning pertama.";
- data.cards.push({team:team,jersey:jersey,color:result,time:now(),note:note});save();render();this.reset();toast(note)
+ var team=document.getElementById("card-team").value,jersey=document.getElementById("jersey").value,kind=document.getElementById("card-kind").value,match=document.getElementById("card-match").value.trim().toUpperCase();
+ if(!team||!match){toast("Pilih tim dan isi kode pertandingan.");return}
+ var cardsForPlayer=data.cards.filter(function(c){return c.team===team&&c.jersey===jersey&&c.match===match});
+ if(cardsForPlayer.some(function(c){return c.color==="red"})){toast("Pemain sudah menerima kartu merah dalam pertandingan ini.");return}
+ var yellow=cardsForPlayer.filter(function(c){return c.color==="yellow"}).length;
+ var result=kind==="red"||yellow>=1?"red":"yellow";
+ var note=kind==="red"?"Kartu merah langsung menurut keputusan wasit.":yellow>=1?"Kartu kuning kedua pada pertandingan ini menjadi merah.":"Kartu kuning pertama pada pertandingan ini.";
+ data.cards.push({team:team,jersey:jersey,match:match,color:result,time:now(),note:note});save();render();this.reset();toast(note)
 });
 document.getElementById("role").addEventListener("change",function(){role=this.value;localStorage.setItem(ROLE_KEY,role);render();toast("Peran simulasi diganti: "+role)});
 document.getElementById("vibrate-enabled").addEventListener("change",function(){
