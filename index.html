@@ -191,27 +191,115 @@ function renderVibrationSettings(){
 function toast(msg){var x=document.getElementById("toast");x.textContent=msg;x.classList.add("show");clearTimeout(window._ccToast);window._ccToast=setTimeout(function(){x.classList.remove("show")},3500)}
 function nav(name){document.querySelectorAll(".view").forEach(function(el){el.classList.toggle("active",el.id===name)});document.querySelectorAll("[data-view]").forEach(function(el){el.classList.toggle("active",el.getAttribute("data-view")===name)});var title={dashboard:"Dashboard",report:"Laporan",cases:"Insiden Hari Ini",history:"Riwayat Insiden",schedule:"Jadwal",cards:"CardSync",insights:"Statistik",decisions:"Rule Assistant",settings:"Pengaturan"};document.getElementById("crumb").textContent=title[name]||"Dashboard";render();window.scrollTo(0,0)}
 function label(st){return {open:"Laporan baru",assigned:"Ditugaskan",progress:"Ditangani",closed:"Selesai"}[st]||"Baru"}
-function render(){
- var total=data.cases.length,open=data.cases.filter(function(c){return c.status==="open"||c.status==="assigned"}).length,progress=data.cases.filter(function(c){return c.status==="progress"}).length,closed=data.cases.filter(function(c){return c.status==="closed"}).length;
- document.getElementById("m-total").textContent=total;document.getElementById("m-open").textContent=open;document.getElementById("m-progress").textContent=progress;document.getElementById("m-closed").textContent=closed;
- document.getElementById("role-pill").textContent=role==="coordinator"?"ADMIN":role.toUpperCase();renderVibrationSettings();
- var recent=data.cases.slice().reverse().slice(0,4);
- document.getElementById("recent").innerHTML=recent.length?recent.map(function(c){return '<div class="case"><div><strong>'+safe(c.type)+'</strong><small>'+safe(c.place)+" · "+safe(c.time)+'</small></div><span class="status '+safe(c.status)+'">'+label(c.status)+"</span></div>"}).join(""):'<div class="empty">Belum ada laporan. Gunakan "Muat skenario fiktif" pada Pengaturan untuk demonstrasi.</div>';
- renderCases();renderCards();renderChart();
+var activeDateKey="";
+var archiveExpanded={};
+function dateKey(date){
+ if(!(date instanceof Date)||!Number.isFinite(date.getTime()))return "";
+ return String(date.getFullYear())+"-"+String(date.getMonth()+1).padStart(2,"0")+"-"+String(date.getDate()).padStart(2,"0");
 }
-function renderCases(){
- var f=document.getElementById("filter").value;
- var cases=data.cases.slice().reverse().filter(function(c){return f==="all"||c.status===f});
- document.getElementById("case-list").innerHTML=cases.length?cases.map(function(c){
- var detail='<div class="case-card"><div class="top"><div><h3>'+safe(c.type)+'</h3><div class="muted">'+safe(c.id)+" · "+safe(c.place)+" · "+safe(c.time)+'</div></div><span class="status '+safe(c.status)+'">'+label(c.status)+'</span></div><p>'+safe(c.detail)+'</p><div class="muted">Prioritas: '+safe(c.priority)+" · Pelapor: "+safe(c.reporter)+'</div>';
+function todayKey(){return dateKey(new Date())}
+function incidentDate(caseData){
+ if(typeof caseData.createdAt==="string"){
+  var parsed=new Date(caseData.createdAt);
+  if(Number.isFinite(parsed.getTime())&&parsed.getFullYear()>=2020&&parsed.getFullYear()<2100)return parsed;
+ }
+ if(typeof caseData.id==="string"){
+  var m=/^CC-([0-9A-Z]+)-/i.exec(caseData.id);
+  if(m){
+   var ms=parseInt(m[1],36);
+   var fromId=new Date(ms);
+   if(Number.isFinite(ms)&&fromId.getFullYear()>=2020&&fromId.getFullYear()<2100)return fromId;
+  }
+ }
+ if(typeof caseData.time==="string"){
+  var fromText=new Date(caseData.time);
+  if(Number.isFinite(fromText.getTime())&&fromText.getFullYear()>=2020&&fromText.getFullYear()<2100)return fromText;
+ }
+ return null;
+}
+function caseDay(caseData){var dt=incidentDate(caseData);return dt?dateKey(dt):"unknown"}
+function dayLabel(day){
+ if(day==="unknown")return "Tanggal tidak diketahui";
+ var parts=day.split("-").map(Number);
+ if(parts.length!==3||!parts.every(Number.isFinite))return "Tanggal tidak diketahui";
+ var dt=new Date(parts[0],parts[1]-1,parts[2]);
+ if(dateKey(dt)!==day)return "Tanggal tidak diketahui";
+ return new Intl.DateTimeFormat("id-ID",{weekday:"long",day:"numeric",month:"long",year:"numeric"}).format(dt);
+}
+function matchesCase(c,search,status){
+ if(status!=="all"&&c.status!==status)return false;
+ if(!search)return true;
+ var terms=[c.id,c.type,c.place,c.reporter,c.detail,c.priority,c.status].join(" ").toLowerCase();
+ return terms.includes(search.toLowerCase());
+}
+function isUnresolved(c){return c.status!=="closed"}
+function todayCases(){var day=todayKey();return data.cases.filter(function(c){return caseDay(c)===day})}
+function archivedCases(){var day=todayKey();return data.cases.filter(function(c){return caseDay(c)!==day})}
+function scopedCases(){
+ var selected=document.getElementById("analytics-scope").value;
+ if(selected==="all")return data.cases.slice();
+ var today=todayKey();
+ if(selected==="today")return todayCases();
+ var start=new Date();start.setHours(0,0,0,0);start.setDate(start.getDate()-6);
+ var from=dateKey(start);
+ return data.cases.filter(function(c){var d=caseDay(c);return d!=="unknown"&&d>=from&&d<=today});
+}
+function caseCard(c){
+ var detail='<article class="case-card"><div class="top"><div><h3>'+safe(c.type)+'</h3><div class="muted">'+safe(c.id)+" · "+safe(c.place)+" · "+safe(c.time)+'</div></div><span class="status '+safe(c.status)+'">'+label(c.status)+'</span></div><p>'+safe(c.detail)+'</p><div class="muted">Prioritas: '+safe(c.priority)+" · Petugas: "+safe(c.reporter)+'</div>';
  var acts="";
  if(role==="coordinator"&&c.status==="open")acts='<button class="button dark" data-act="assign" data-id="'+safe(c.id)+'">Tugaskan petugas →</button>';
  if((role==="coordinator"||role==="marshal")&&c.status==="assigned")acts='<button class="button dark" data-act="progress" data-id="'+safe(c.id)+'">Tandai sedang ditangani →</button>';
  if(role==="coordinator"&&c.status==="progress")acts='<button class="button" data-act="close" data-id="'+safe(c.id)+'">Konfirmasi selesai ✓</button>';
  if(acts)detail+='<div class="actions">'+acts+'</div>';
- detail+='<details style="margin-top:12px"><summary style="cursor:pointer;color:#477b7c;font-size:12px;font-weight:800">Lihat riwayat tindakan</summary><ol class="timeline">'+c.log.map(function(l){return "<li>"+safe(l)+"</li>"}).join("")+"</ol></details></div>";
- return detail
- }).join(""):'<div class="empty">Tidak ada laporan untuk filter ini.</div>'
+ var log=Array.isArray(c.log)?c.log:[];
+ detail+='<details class="case-log"><summary>Lihat riwayat tindakan ('+log.length+')</summary><ol class="timeline">'+log.map(function(l){return "<li>"+safe(l)+"</li>"}).join("")+'</ol></details></article>';
+ return detail;
+}
+function render(){
+ var todays=todayCases(),archived=archivedCases();
+ var total=todays.length,open=todays.filter(function(c){return c.status==="open"||c.status==="assigned"}).length,
+ progress=todays.filter(function(c){return c.status==="progress"}).length,closed=todays.filter(function(c){return c.status==="closed"}).length;
+ document.getElementById("m-total").textContent=total;
+ document.getElementById("m-open").textContent=open;
+ document.getElementById("m-progress").textContent=progress;
+ document.getElementById("m-closed").textContent=closed;
+ document.getElementById("archived-count").textContent=archived.length;
+ var todayName=dayLabel(todayKey());
+ document.getElementById("today-label").textContent=todayName;
+ document.getElementById("cases-today-label").textContent=todayName;
+ document.getElementById("role-pill").textContent=role==="coordinator"?"ADMIN":role.toUpperCase();
+ renderVibrationSettings();
+ var recent=todays.slice().reverse().slice(0,4);
+ document.getElementById("recent").innerHTML=recent.length?recent.map(function(c){
+  return '<div class="case"><div><strong>'+safe(c.type)+'</strong><small>'+safe(c.place)+" · "+safe(c.time)+'</small></div><span class="status '+safe(c.status)+'">'+label(c.status)+'</span></div>';
+ }).join(""):'<div class="empty">Belum ada insiden hari ini. Laporan sebelumnya tersimpan di Riwayat Insiden.</div>';
+ renderCases();renderHistory();renderCards();renderChart();
+ activeDateKey=todayKey();
+}
+function renderCases(){
+ var status=document.getElementById("filter").value,search=document.getElementById("today-search").value.trim();
+ var cases=todayCases().slice().reverse().filter(function(c){return matchesCase(c,search,status)});
+ document.getElementById("case-list").innerHTML=cases.length?cases.map(caseCard).join(""):'<div class="empty">Tidak ada laporan hari ini yang cocok. Lihat Riwayat Insiden untuk tanggal sebelumnya.</div>';
+}
+function renderHistory(){
+ var old=archivedCases(),groups=Object.create(null);
+ old.forEach(function(c){var d=caseDay(c);(groups[d]||(groups[d]=[])).push(c)});
+ var keys=Object.keys(groups).sort(function(a,b){
+  if(a==="unknown")return 1;if(b==="unknown")return -1;return b.localeCompare(a);
+ });
+ document.getElementById("hist-total").textContent=old.length;
+ document.getElementById("hist-days").textContent=keys.length;
+ document.getElementById("hist-pending").textContent=old.filter(isUnresolved).length;
+ var search=document.getElementById("history-search").value.trim(),status=document.getElementById("history-status").value;
+ var sections=[];
+ keys.forEach(function(day,i){
+  var cases=groups[day].slice().reverse().filter(function(c){return matchesCase(c,search,status)});
+  if(!cases.length)return;
+  var all=groups[day],pending=all.filter(isUnresolved).length;
+  var expanded=Object.prototype.hasOwnProperty.call(archiveExpanded,day)?archiveExpanded[day]:(i===0||!!search||status!=="all");
+  sections.push('<details class="archive-folder" data-archive-day="'+safe(day)+'"'+(expanded?' open':'')+'><summary><span class="folder-glyph" aria-hidden="true">▨</span><span class="archive-title"><strong>'+safe(dayLabel(day))+'</strong><small>'+all.length+' laporan · '+(pending?pending+" perlu tindak lanjut":"semua selesai")+'</small></span><span class="folder-badge">'+cases.length+' laporan</span><span class="folder-chevron" aria-hidden="true">⌄</span></summary><div class="archive-contents">'+cases.map(caseCard).join("")+'</div></details>');
+ });
+ document.getElementById("archive-list").innerHTML=sections.length?sections.join(""):'<div class="empty">'+(old.length?"Tidak ditemukan laporan sesuai pencarian atau filter.":"Arsip masih kosong. Laporan akan otomatis muncul di sini pada hari berikutnya.")+'</div>';
 }
 function renderCards(){
  document.getElementById("card-list").innerHTML=data.cards.length?data.cards.slice().reverse().map(function(c){return '<div class="case"><div><strong>'+safe(c.team)+" · #"+safe(c.jersey)+'</strong><small>'+safe(c.match||"Pertandingan belum dicatat")+" · "+safe(c.time)+" · "+safe(c.note)+'</small></div><span class="status '+(c.color==="red"?"open":"closed")+'">'+(c.color==="red"?"MERAH":"KUNING")+"</span></div>"}).join(""):'<div class="empty">Belum ada catatan kartu.</div>'
