@@ -147,7 +147,12 @@ function candidateSchedule(){
  return {home:clean($("schedule-home")?.value,48),away:clean($("schedule-away")?.value,48),date:$("schedule-date")?.value||"",time:$("schedule-time")?.value||"",venue:clean($("schedule-venue")?.value,80),duration:Number($("schedule-duration")?.value)||60};
 }
 function conflictPreview(){
- const cand=candidateSchedule(),arr=read(SCHEDULE_KEY,[]),issues=compareFixtures(cand,arr);
+ const cand=candidateSchedule(),arr=read(SCHEDULE_KEY,[]);
+ if(!cand.home||!cand.away||!cand.date||!cand.time||!cand.venue){
+  $("conflict-preview").textContent="Isi tim, tanggal, jam, dan lapangan untuk memeriksa jadwal bentrok.";
+  $("conflict-preview").classList.remove("conflict-danger");return [];
+ }
+ const issues=compareFixtures(cand,arr);
  $("conflict-preview").innerHTML=issues.length?'<strong>⚠ Jadwal bentrok</strong><ul>'+issues.map(t=>"<li>"+esc(t)+"</li>").join("")+'</ul>':'<span>✓ Belum ada bentrok terdeteksi untuk pilihan ini.</span>';
  $("conflict-preview").classList.toggle("conflict-danger",!!issues.length);
  return issues;
@@ -224,27 +229,47 @@ function queueReport(caseData){
 }
 window.CCSafeQueue=queueReport;
 function startCamera(){
- if(!("BarcodeDetector" in window)||!navigator.mediaDevices?.getUserMedia){notice("Pemindaian kamera belum didukung. Gunakan kode QR manual.");return}
- let stream=null,video=$("qr-camera"),detector=null,stop=false;
+ if(!navigator.mediaDevices?.getUserMedia){notice("Browser tidak memberikan akses kamera. Gunakan kode manual.");return}
+ let stream=null,video=$("qr-camera"),detector=null,stop=false,canvas=null,context=null;
  const btn=$("camera-start"),off=$("camera-stop");
+ function stopCamera(){
+  stop=true;
+  if(stream)stream.getTracks().forEach(t=>t.stop());
+  video.pause();video.srcObject=null;video.hidden=true;off.hidden=true;btn.hidden=false;
+ }
  async function run(){
   try{
-   let formats=await BarcodeDetector.getSupportedFormats();
-   if(!formats.includes("qr_code"))throw Error("QR scanning tidak didukung browser ini");
-   detector=new BarcodeDetector({formats:["qr_code"]});
-   stream=await navigator.mediaDevices.getUserMedia({video:{facingMode:"environment"},audio:false});
+   if(typeof BarcodeDetector==="function"){
+    try{
+     const formats=await BarcodeDetector.getSupportedFormats();
+     if(formats.includes("qr_code"))detector=new BarcodeDetector({formats:["qr_code"]});
+    }catch(err){}
+   }
+   if(!detector && typeof jsQR!=="function")throw Error("Decoder QR tidak tersedia; gunakan kode manual.");
+   stream=await navigator.mediaDevices.getUserMedia({video:{facingMode:{ideal:"environment"}},audio:false});
    video.srcObject=stream;video.hidden=false;off.hidden=false;btn.hidden=true;
    await video.play();
-   while(!stop && stream.active){
-    try{const codes=await detector.detect(video);if(codes.length){recordCheckIn(codes[0].rawValue);break}}catch(e){}
-    await new Promise(resolve=>setTimeout(resolve,250))
+   if(!detector){canvas=document.createElement("canvas");context=canvas.getContext("2d",{willReadFrequently:true});}
+   while(!stop&&stream.active){
+    try{
+     let raw="";
+     if(detector){const codes=await detector.detect(video);if(codes.length)raw=codes[0].rawValue}
+     else if(video.readyState>=2&&context){
+      canvas.width=Math.max(1,Math.floor(video.videoWidth||320));
+      canvas.height=Math.max(1,Math.floor(video.videoHeight||240));
+      context.drawImage(video,0,0,canvas.width,canvas.height);
+      const frame=context.getImageData(0,0,canvas.width,canvas.height);
+      const qr=jsQR(frame.data,frame.width,frame.height,{inversionAttempts:"dontInvert"});
+      if(qr)raw=qr.data;
+     }
+     if(raw){recordCheckIn(raw);break}
+    }catch(err){}
+    await new Promise(resolve=>setTimeout(resolve,250));
    }
-  }catch(e){notice("Kamera tidak tersedia: "+e.message)}
+  }catch(err){notice("Kamera tidak dapat dijalankan: "+err.message)}
   finally{stopCamera()}
  }
- function stopCamera(){stop=true;if(stream)stream.getTracks().forEach(t=>t.stop());video.srcObject=null;video.hidden=true;off.hidden=true;btn.hidden=false;}
- off.addEventListener("click",stopCamera);
- run();
+ off.addEventListener("click",stopCamera,{once:true});run();
 }
 function init(){
  const operator=$("audit-actor");operator.value=localStorage.getItem(ACTOR_KEY)||"";
@@ -301,6 +326,9 @@ function init(){
  ["schedule-date","schedule-time","schedule-home","schedule-away","schedule-venue","schedule-duration"].forEach(id=>$(id).addEventListener("input",conflictPreview));
  $("daily-date").value=day(new Date());$("daily-date").addEventListener("change",renderDaily);
  $("daily-download").addEventListener("click",downloadDaily);
+ $("decision-check").addEventListener("click",()=>{
+  stampAudit("rule_guidance_viewed","rules",null,{issue:$("decision-issue").value,risk:$("decision-risk").value,refereeConfirmed:$("decision-referee").value,disclaimer:"Advisory only"});
+ });
  $("audit-search").addEventListener("input",renderAudit);
  $("audit-download").addEventListener("click",()=>downloadText("safeguard-audit-"+day(new Date())+".json",JSON.stringify(read(AUDIT_KEY,[]),null,2),"application/json;charset=utf-8"));
  $("sync-retry").addEventListener("click",()=>notice("Server belum dikonfigurasi. "+queue().length+" laporan tetap menunggu; tidak ada data yang dikirim."));
