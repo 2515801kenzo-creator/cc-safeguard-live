@@ -12,6 +12,8 @@
 @media(max-width:1020px){.layout{grid-template-columns:78px minmax(0,1fr)}.sidebar{padding:20px 9px}.brand{padding:0 5px 16px}.brand strong,.brand small,.nav-title,.nav button .nav-label,.sidefoot{display:none}.brand-mark{width:40px;height:40px}.nav button{justify-content:center;padding:12px}.cols{grid-template-columns:1fr}.metric{padding:15px}}@media(max-width:670px){.layout{grid-template-columns:1fr}.sidebar{flex-direction:row;position:sticky;top:0;z-index:12;padding:7px 12px;align-items:center;gap:10px;overflow:auto}.brand{border:0;padding:0;flex-shrink:0}.brand-mark{width:35px;height:35px;font-size:14px}.nav{display:flex;gap:3px}.nav button{min-width:41px;padding:8px}.nav button .mini{font-size:17px}.topbar{padding:12px 16px}.pill{font-size:9px;padding:5px 7px}.content{padding:22px 15px 35px}.heading{align-items:flex-start;flex-direction:column}.metrics{grid-template-columns:repeat(2,minmax(0,1fr));gap:9px}.scoreboard{gap:7px}.shield{display:none}.team h2{font-size:12px}.score{font-size:38px}.match{padding:19px 14px}.match-bottom{gap:8px;font-size:10px}.form-grid,.grid3{grid-template-columns:1fr}.panel{padding:17px}}
 </style>
 <link rel="stylesheet" href="ui-v2.css">
+<link rel="manifest" href="manifest.webmanifest">
+<link rel="icon" href="assets/safeguard-icon.svg" type="image/svg+xml">
 </head>
 <body>
 <div class="layout">
@@ -152,7 +154,7 @@
    <form id="checkin-form"><div class="field"><label for="checkin-token">Kode dari QR atau kamera</label><input id="checkin-token" maxlength="200" required placeholder="CCSL1:..." autocomplete="off"></div><button type="submit" class="button">✓ Validasi check-in</button></form>
    <div class="actions"><button id="camera-start" type="button" class="button soft">▣ Scan kamera</button><button id="camera-stop" type="button" class="button danger" hidden>Hentikan kamera</button></div>
    <video id="qr-camera" playsinline muted hidden style="width:100%;max-height:260px;object-fit:cover;border-radius:13px;margin-top:10px"></video>
-   <p class="help">Kamera menggunakan BarcodeDetector jika tersedia. Jika tidak didukung, salin kode manual pada kartu QR dan tempel di formulir.</p>
+   <p class="help">Kamera menggunakan BarcodeDetector atau pemindai JavaScript lokal. Jika kamera tidak diizinkan atau bermasalah, gunakan kode manual di kartu.</p>
   </div>
  </div>
  <div class="panel" style="margin-top:17px"><div class="panel-head"><div><div class="eyebrow">TEAM DIRECTORY</div><h3>Daftar lobby tim</h3></div><span class="tag">Status otomatis</span></div><div id="team-list" class="team-grid"></div></div>
@@ -526,5 +528,7 @@ setInterval(function(){if(activeDateKey!==todayKey())render()},60000);
 </script>
 <script src="features-v2.js"></script>
 <script src="vendor/qrcode-generator.js"></script>
+<script src="vendor/jsQR.js"></script>
 <script src="operations-v3.js"></script>
+<script>if("serviceWorker" in navigator){window.addEventListener("load",function(){navigator.serviceWorker.register("./sw.js").catch(function(){})})}</script>
 </body></html>
