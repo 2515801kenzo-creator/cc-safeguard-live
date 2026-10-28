@@ -20,7 +20,8 @@
  <div><div class="nav-title">MATCH CONTROL</div><nav class="nav" aria-label="Navigasi utama">
   <button class="active" data-view="dashboard"><span class="mini">▦</span><span class="nav-label">Dashboard</span></button>
   <button data-view="report" aria-label="Lapor insiden" title="Lapor insiden"><span class="mini">⚑</span><span class="nav-label">Lapor insiden</span></button>
-  <button data-view="cases" aria-label="Pusat insiden" title="Pusat insiden"><span class="mini">▤</span><span class="nav-label">Pusat insiden</span></button>
+  <button data-view="cases" aria-label="Insiden hari ini" title="Insiden hari ini"><span class="mini">▤</span><span class="nav-label">Insiden hari ini</span></button>
+  <button data-view="history" aria-label="Riwayat insiden" title="Riwayat insiden"><span class="mini">▨</span><span class="nav-label">Riwayat insiden</span></button>
   <button data-view="schedule" aria-label="Jadwal pertandingan" title="Jadwal pertandingan"><span class="mini">▦</span><span class="nav-label">Jadwal pertandingan</span></button>
   <button data-view="cards" aria-label="CardSync" title="CardSync"><span class="mini">▣</span><span class="nav-label">CardSync</span></button>
   <button data-view="insights" aria-label="Statistik" title="Statistik"><span class="mini">▥</span><span class="nav-label">Statistik</span></button>
@@ -47,11 +48,12 @@
 <div class="panel"><div class="panel-head"><div><div class="eyebrow">UPCOMING MATCHES</div><h3>Jadwal terdekat</h3></div><button class="button soft" data-view="schedule" style="padding:7px 10px;min-height:32px">Lihat →</button></div><div id="schedule-preview"></div></div>
 <div class="panel"><div class="eyebrow">QUICK ACCESS</div><h3>Butuh tindakan?</h3><p style="color:#718699;font-size:12px;margin:0 0 14px">Catat insiden dan koordinasikan tindak lanjut lewat alur yang jelas.</p><div class="actions"><button class="button dark" data-view="cases">Pusat insiden →</button><button class="button soft" data-view="decisions">Rule Assistant</button></div></div>
 </div></div>
-<div class="metrics"><div class="metric"><div class="name"><span class="dot"></span>Total laporan</div><div class="number" id="m-total">0</div><div class="hint">Kasus yang tercatat</div></div>
+<div class="day-operations-bar"><div><span class="day-indicator">● LIVE DAILY VIEW</span><strong id="today-label">Hari ini</strong><small>Aktivitas hari ini ditampilkan di dashboard. Laporan lama tersimpan di riwayat.</small></div><button class="button soft" data-view="history">▨ Riwayat <span id="archived-count">0</span> laporan →</button></div>
+ <div class="metrics"><div class="metric"><div class="name"><span class="dot"></span>Total laporan</div><div class="number" id="m-total">0</div><div class="hint">Kasus yang tercatat</div></div>
 <div class="metric"><div class="name"><span class="dot amber"></span>Perlu tindak lanjut</div><div class="number" id="m-open">0</div><div class="hint">Baru dan ditugaskan</div></div>
 <div class="metric"><div class="name"><span class="dot blue"></span>Sedang ditangani</div><div class="number" id="m-progress">0</div><div class="hint">Penanganan berlangsung</div></div>
 <div class="metric"><div class="name"><span class="dot gray"></span>Selesai</div><div class="number" id="m-closed">0</div><div class="hint">Kasus sudah ditutup</div></div></div>
-<div class="cols"><div class="panel"><div class="panel-head"><div><div class="eyebrow">INCIDENT FEED</div><h3>Aktivitas insiden</h3></div><button class="button soft" data-view="cases">Semua insiden →</button></div><div id="recent"></div></div>
+<div class="cols"><div class="panel"><div class="panel-head"><div><div class="eyebrow">TODAY’S INCIDENTS</div><h3>Insiden hari ini</h3></div><button class="button soft" data-view="cases">Lihat hari ini →</button></div><div id="recent"></div></div>
 <div class="panel dark-panel"><div class="eyebrow">RESPONSE STANDARD</div><h3>Alur respons</h3>
 <div class="protocol"><b>01</b><span><strong>Pastikan situasi aman</strong><small>Utamakan penanganan langsung di lapangan.</small></span></div>
 <div class="protocol"><b>02</b><span><strong>Catat laporan objektif</strong><small>Rekam fakta tanpa tuduhan pribadi.</small></span></div>
@@ -83,18 +85,46 @@
 </div><button class="button" type="submit" data-admin-only>＋ Tambah jadwal</button></form></div></div>
 </section>
 <section class="view" id="cases">
- <div class="heading"><div><div class="eyebrow">INCIDENT RESPONSE</div><h1>Pusat Penanganan.</h1><p>Proses dari laporan awal hingga penanganan selesai, dengan riwayat tindakan yang jelas.</p></div><button class="button" data-view="report">＋ Laporan baru</button></div>
- <div class="panel"><div class="field" style="max-width:300px"><label for="filter">Filter status</label><select id="filter"><option value="all">Semua kasus</option><option value="open">Baru</option><option value="assigned">Ditugaskan</option><option value="progress">Sedang ditangani</option><option value="closed">Selesai</option></select></div><div id="case-list"></div></div>
-</section>
+ <div class="heading"><div><div class="eyebrow">ACTIVE INCIDENT WORKSPACE</div><h1>Insiden Hari Ini.</h1><p>Daftar laporan untuk tanggal hari ini. Pergantian hari otomatis memindahkan laporan lama ke Riwayat Insiden tanpa menghapus data.</p></div><button class="button" data-view="report">＋ Laporan baru</button></div>
+ <div class="day-operations-bar"><div><span class="day-indicator">● CURRENT DAY</span><strong id="cases-today-label">Hari ini</strong><small>Perubahan status tetap dicatat dalam log tindakan.</small></div><button class="button soft" data-view="history">Buka riwayat →</button></div>
+ <div class="panel">
+  <div class="filters-row">
+   <div class="field"><label for="filter">Status</label><select id="filter"><option value="all">Semua status</option><option value="open">Laporan baru</option><option value="assigned">Ditugaskan</option><option value="progress">Sedang ditangani</option><option value="closed">Selesai</option></select></div>
+   <div class="field"><label for="today-search">Cari laporan hari ini</label><input id="today-search" type="search" maxlength="120" placeholder="ID, kategori, atau lokasi…"></div>
+  </div>
+  <div id="case-list"></div>
+ </div>
+ </section>
+<section class="view" id="history">
+ <div class="heading"><div><div class="eyebrow">DAILY INCIDENT ARCHIVE</div><h1>Riwayat Insiden.</h1><p>Setiap tanggal menjadi folder tersendiri. Laporan tidak hilang; kronologi dan catatan tindak lanjut tetap bisa ditinjau.</p></div><button class="button soft" id="backup-btn">↓ Cadangkan data JSON</button></div>
+ <div class="history-stats">
+  <div class="history-stat"><small>Laporan terdahulu</small><strong id="hist-total">0</strong></div>
+  <div class="history-stat"><small>Jumlah tanggal arsip</small><strong id="hist-days">0</strong></div>
+  <div class="history-stat"><small>Belum terselesaikan</small><strong id="hist-pending">0</strong></div>
+ </div>
+ <div class="info-strip" style="margin-bottom:17px"><i>ⓘ</i><span>Folder arsip dibuat otomatis dari tanggal laporan, bukan folder file di GitHub. Kasus lama yang belum selesai tetap dapat ditindaklanjuti melalui riwayat.</span></div>
+ <div class="panel">
+  <div class="filters-row">
+   <div class="field"><label for="history-search">Cari di semua tanggal</label><input id="history-search" type="search" maxlength="120" placeholder="ID, kategori, petugas, kronologi…"></div>
+   <div class="field"><label for="history-status">Status</label><select id="history-status"><option value="all">Semua status</option><option value="open">Laporan baru</option><option value="assigned">Ditugaskan</option><option value="progress">Sedang ditangani</option><option value="closed">Selesai</option></select></div>
+  </div>
+  <div id="archive-list" class="archive-list"></div>
+ </div>
+ </section>
 <section class="view" id="cards">
  <div class="heading"><div><div class="eyebrow">DISCIPLINE RECORD</div><h1>CardSync.</h1><p>Mencatat kartu setelah keputusan wasit, bukan memutuskan kesalahan menggunakan AI.</p></div></div>
  <div class="info-strip" style="margin-bottom:19px"><i>ⓘ</i><span>Dua kartu kuning pada pemain yang sama dalam satu pertandingan menghasilkan kartu merah. Hukuman berikutnya tetap mengikuti SOP resmi.</span></div>
  <div class="cols"><div class="panel"><h3>Catat kartu yang telah diputuskan wasit</h3><form id="card-form"><div class="field"><label for="card-team">Tim</label><select id="card-team" required><option value="">Atur tim di Pengaturan terlebih dahulu</option></select></div><div class="field"><label for="card-match">Kode pertandingan</label><input id="card-match" required maxlength="45" placeholder="Contoh: MATCH-01"></div><div class="field"><label for="jersey">Nomor punggung</label><input id="jersey" type="number" min="1" max="99" required placeholder="7"></div><div class="field"><label for="card-kind">Jenis kartu</label><select id="card-kind"><option value="yellow">Kartu kuning</option><option value="red">Kartu merah langsung</option></select></div><button class="button" type="submit">Simpan keputusan wasit</button></form></div><div class="panel"><h3>Riwayat kartu</h3><div id="card-list"></div></div></div>
 </section>
 <section class="view" id="insights">
- <div class="heading"><div><div class="eyebrow">LEARNING ANALYTICS</div><h1>Analisis & Laporan.</h1><p>Melihat kategori insiden dalam simulasi dan mengekspor data untuk evaluasi kelompok.</p></div><button class="button dark" id="export-btn">↓ Ekspor CSV</button></div>
- <div class="panel"><h3>Komposisi kategori laporan demo</h3><div class="bars" id="bars"></div></div>
-</section>
+ <div class="heading"><div><div class="eyebrow">INCIDENT INTELLIGENCE</div><h1>Statistik Insiden.</h1><p>Bandingkan laporan hari ini dengan riwayat untuk evaluasi pertandingan dan penanganan.</p></div><button class="button dark" id="export-btn">↓ Ekspor CSV</button></div>
+ <div class="panel">
+  <div class="filters-row"><div class="field"><label for="analytics-scope">Periode laporan</label><select id="analytics-scope"><option value="today">Hari ini</option><option value="week">7 hari terakhir</option><option value="all">Semua tanggal</option></select></div></div>
+  <div class="analytics-summary"><div><small>Jumlah laporan dalam periode</small><strong id="analytics-total">0</strong></div><div><small>Kasus belum selesai</small><strong id="analytics-unresolved">0</strong></div><div><small>Sudah selesai</small><strong id="analytics-resolved">0</strong></div></div>
+  <h3 style="margin-top:22px">Kategori insiden</h3><div class="bars" id="bars"></div>
+  <p class="help">CSV mengikuti periode yang dipilih. Semua data bersumber dari browser ini, bukan perangkat lain.</p>
+ </div>
+ </section>
 <section class="view" id="decisions">
 <div class="heading"><div><div class="eyebrow">RULE DECISION SUPPORT</div><h1>Rule Assistant.</h1><p>Panduan tindakan awal di lapangan; keputusan resmi tetap pada wasit dan panitia.</p></div></div>
 <div class="cols"><div class="panel"><h3>Analisis situasi</h3>
@@ -130,8 +160,8 @@
 <p class="help">Getaran halaman web umumnya tidak tersedia di iPhone/iPad. Suara perlu interaksi pengguna. Tidak ada notifikasi latar belakang atau antarperangkat.</p></div>
 <div class="panel"><div class="eyebrow">LOCAL DATA</div><h3>Data &amp; penyimpanan</h3>
 <p style="font-size:13px;color:#607484">Skor, tim, jadwal, dan laporan hanya tersimpan pada browser ini; bukan data bersama. Penggunaan resmi memerlukan database, autentikasi, izin, dan persetujuan panitia.</p>
-<div class="actions"><button class="button soft" id="seed-btn" type="button">Muat contoh insiden</button><button class="button danger" id="clear-btn" type="button">Kosongkan data insiden</button></div>
-<p class="help">Gunakan data fiktif. Jangan memasukkan data sensitif atau menganggap situs sebagai saluran darurat.</p></div></div>
+<div class="actions"><button class="button soft" id="seed-btn" type="button">Muat contoh insiden</button><button class="button soft" id="backup-settings" type="button">↓ Backup JSON</button><button class="button danger" id="clear-btn" type="button">Kosongkan data insiden</button></div>
+<p class="help">Tombol kosongkan data menghapus laporan dan kartu dari browser ini, termasuk arsip. Unduh cadangan sebelum menghapus atau membersihkan data browser. Jangan memasukkan data sensitif.</p></div></div>
 </section>
 <div class="footer">CC SafeGuard Live · Match operations interface · Local Mode. Tidak terhubung ke panitia atau layanan darurat. Gunakan data uji anonim.</div>
 </div></main></div><div class="toast" role="status" aria-live="polite" id="toast"></div>
@@ -159,7 +189,7 @@ function renderVibrationSettings(){
  else{toggle.disabled=false;state.textContent=vibrationEnabled()?"Getaran aktif · perangkat ini":"Getaran nonaktif";}
 }
 function toast(msg){var x=document.getElementById("toast");x.textContent=msg;x.classList.add("show");clearTimeout(window._ccToast);window._ccToast=setTimeout(function(){x.classList.remove("show")},3500)}
-function nav(name){document.querySelectorAll(".view").forEach(function(el){el.classList.toggle("active",el.id===name)});document.querySelectorAll("[data-view]").forEach(function(el){el.classList.toggle("active",el.getAttribute("data-view")===name)});var title={dashboard:"Dashboard",report:"Laporan",cases:"Pusat insiden",schedule:"Jadwal",cards:"CardSync",insights:"Statistik",decisions:"Rule Assistant",settings:"Pengaturan"};document.getElementById("crumb").textContent=title[name]||"Dashboard";render();window.scrollTo(0,0)}
+function nav(name){document.querySelectorAll(".view").forEach(function(el){el.classList.toggle("active",el.id===name)});document.querySelectorAll("[data-view]").forEach(function(el){el.classList.toggle("active",el.getAttribute("data-view")===name)});var title={dashboard:"Dashboard",report:"Laporan",cases:"Insiden Hari Ini",history:"Riwayat Insiden",schedule:"Jadwal",cards:"CardSync",insights:"Statistik",decisions:"Rule Assistant",settings:"Pengaturan"};document.getElementById("crumb").textContent=title[name]||"Dashboard";render();window.scrollTo(0,0)}
 function label(st){return {open:"Laporan baru",assigned:"Ditugaskan",progress:"Ditangani",closed:"Selesai"}[st]||"Baru"}
 function render(){
  var total=data.cases.length,open=data.cases.filter(function(c){return c.status==="open"||c.status==="assigned"}).length,progress=data.cases.filter(function(c){return c.status==="progress"}).length,closed=data.cases.filter(function(c){return c.status==="closed"}).length;
