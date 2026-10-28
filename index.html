@@ -389,11 +389,14 @@ function downloadLocalFile(filename,mime,content){
  setTimeout(function(){URL.revokeObjectURL(url)},2000);
 }
 function backupAll(){
- var snap={schemaVersion:3,exportedAt:new Date().toISOString(),source:"CC SafeGuard Live · browser backup",data:data,match:null,schedule:null};
+ var snap={schemaVersion:4,exportedAt:new Date().toISOString(),source:"CC SafeGuard Live · browser backup (KEEP PRIVATE)",data:data,match:null,schedule:null,teams:null,audit:null,queue:null};
  try{snap.match=JSON.parse(localStorage.getItem("cc_safeguard_match_v3")||"null")}catch(e){}
  try{snap.schedule=JSON.parse(localStorage.getItem("cc_safeguard_schedule_v3")||"null")}catch(e){}
+ try{snap.teams=JSON.parse(localStorage.getItem("ccsl_teams_v3")||"null")}catch(e){}
+ try{snap.audit=JSON.parse(localStorage.getItem("ccsl_audit_v3")||"null")}catch(e){}
+ try{snap.queue=JSON.parse(localStorage.getItem("ccsl_queue_v3")||"null")}catch(e){}
  downloadLocalFile("cc-safeguard-backup-"+todayKey()+".json","application/json;charset=utf-8",[JSON.stringify(snap,null,2)]);
- toast("File cadangan diunduh. Simpan di tempat aman.");
+ toast("Backup berhasil diunduh. Simpan secara pribadi karena berisi kode QR peserta.");
 }
 function exportCSV(){
  var rows=[["ID","Tanggal laporan","Waktu","Jenis","Prioritas","Lokasi","Petugas","Status","Kronologi","Log tindakan"]];
@@ -472,10 +475,10 @@ document.getElementById("backup-btn").addEventListener("click",backupAll);
 document.getElementById("backup-settings").addEventListener("click",backupAll);
 document.getElementById("restore-input").addEventListener("change",async function(){
  var file=this.files&&this.files[0];if(!file)return;
- if(file.size>2*1024*1024){toast("File lebih dari 2 MB. Tidak dapat dipulihkan.");this.value="";return}
+ if(file.size>5*1024*1024){toast("File lebih dari 5 MB. Tidak dapat dipulihkan.");this.value="";return}
  try{
   var obj=JSON.parse(await file.text());
-  if(!obj||obj.schemaVersion!==3||!obj.data||!Array.isArray(obj.data.cases)||!Array.isArray(obj.data.cards)
+  if(!obj||![3,4].includes(obj.schemaVersion)||!obj.data||!Array.isArray(obj.data.cases)||!Array.isArray(obj.data.cards)
     ||obj.data.cases.length>5000||obj.data.cards.length>10000){
    throw new Error("Format atau ukuran data backup tidak valid");
   }
@@ -493,7 +496,34 @@ document.getElementById("restore-input").addEventListener("change",async functio
   });
   var schedules=obj.schedule==null?null:obj.schedule;
   if(schedules!==null&&(!Array.isArray(schedules)||schedules.length>100))throw new Error("Format jadwal tidak valid");
-  if(!confirm("Pulihkan "+cases.length+" laporan dan "+cards.length+" kartu? Data lokal yang sekarang akan diganti. Lanjutkan?")){this.value="";return}
+  var restoredTeams=null,restoredAudit=null,restoredQueue=null;
+  if(obj.teams!=null){
+   if(!Array.isArray(obj.teams)||obj.teams.length>64)throw new Error("Format tim tidak valid");
+   restoredTeams=obj.teams.map(function(t){
+    if(!t||typeof t!=="object"||!Array.isArray(t.members)||t.members.length>30)throw new Error("Isi tim tidak valid");
+    var tx=function(v,m){return String(v==null?"":v).slice(0,m)};
+    var members=t.members.map(function(m){
+     if(!m||!(/^[0-9a-f]{32}$/i).test(m.token||""))throw new Error("QR anggota tidak valid");
+     return {id:tx(m.id,60),alias:tx(m.alias,48),token:m.token,expiresAt:tx(m.expiresAt,50),matchId:tx(m.matchId,60)||null,createdAt:tx(m.createdAt,50),checkedInAt:tx(m.checkedInAt,50)||null};
+    });
+    return {id:tx(t.id,60),code:tx(t.code,30),name:tx(t.name,48),status:["absent","arrived","ready"].includes(t.status)?t.status:"absent",members:members,createdAt:tx(t.createdAt,50)};
+   });
+   var tokens=restoredTeams.flatMap(function(t){return t.members.map(function(m){return m.token})});
+   if(new Set(tokens).size!==tokens.length)throw new Error("Ada QR duplikat dalam backup");
+  }
+  if(obj.audit!=null){
+   if(!Array.isArray(obj.audit)||obj.audit.length>1500)throw new Error("Format audit log tidak valid");
+   restoredAudit=obj.audit.filter(function(a){return a&&typeof a==="object"}).map(function(a){
+    return {id:String(a.id||"").slice(0,90),at:String(a.at||"").slice(0,60),actor:String(a.actor||"").slice(0,60),role:String(a.role||"").slice(0,30),action:String(a.action||"").slice(0,90),entity:String(a.entity||"").slice(0,120),previous:a.previous==null?null:JSON.parse(JSON.stringify(a.previous)),current:a.current==null?null:JSON.parse(JSON.stringify(a.current))};
+   });
+  }
+  if(obj.queue!=null){
+   if(!Array.isArray(obj.queue)||obj.queue.length>5000)throw new Error("Format antrean tidak valid");
+   restoredQueue=obj.queue.filter(function(q){return q&&typeof q==="object"}).map(function(q){
+    return {eventId:String(q.eventId||"").slice(0,90),caseId:String(q.caseId||"").slice(0,100),queuedAt:String(q.queuedAt||"").slice(0,50),status:"pending"};
+   });
+  }
+  if(!confirm("Pulihkan "+cases.length+" laporan, "+cards.length+" kartu, dan data tim? Data lokal yang sekarang akan diganti. Backup juga memuat kode QR peserta; jaga kerahasiaannya. Lanjutkan?")){this.value="";return}
   var prepared=JSON.stringify({cases:cases,cards:cards});
   localStorage.setItem(KEY,prepared);
   if(obj.match&&typeof obj.match==="object"&&!Array.isArray(obj.match)){
@@ -503,11 +533,17 @@ document.getElementById("restore-input").addEventListener("change",async functio
   }
   if(schedules!==null){
    var valid=schedules.filter(function(s){return s&&typeof s==="object"}).map(function(s){
-    return {id:String(s.id||"").slice(0,100),home:String(s.home||"").slice(0,48),away:String(s.away||"").slice(0,48),date:String(s.date||"").slice(0,10),time:String(s.time||"").slice(0,5),venue:String(s.venue||"").slice(0,80)};
+    return {id:String(s.id||"").slice(0,100),home:String(s.home||"").slice(0,48),away:String(s.away||"").slice(0,48),date:String(s.date||"").slice(0,10),time:String(s.time||"").slice(0,5),venue:String(s.venue||"").slice(0,80),duration:[30,45,60,90,120].includes(Number(s.duration))?Number(s.duration):60};
    });
    localStorage.setItem("cc_safeguard_schedule_v3",JSON.stringify(valid));
   }
-  data={cases:cases,cards:cards};archiveExpanded={};render();toast("Backup dipulihkan. Muat ulang halaman untuk menyegarkan scoreboard dan jadwal.");
+  if(restoredTeams!==null)localStorage.setItem("ccsl_teams_v3",JSON.stringify(restoredTeams));
+  if(restoredAudit!==null)localStorage.setItem("ccsl_audit_v3",JSON.stringify(restoredAudit));
+  if(restoredQueue!==null)localStorage.setItem("ccsl_queue_v3",JSON.stringify(restoredQueue));
+  data={cases:cases,cards:cards};archiveExpanded={};render();
+  if(window.CCSafeAudit)window.CCSafeAudit("backup_restored","local_storage",null,{cases:cases.length,cards:cards.length,teams:restoredTeams?restoredTeams.length:0});
+  if(window.CCSafeRefresh)window.CCSafeRefresh();
+  toast("Backup dipulihkan. Refresh halaman untuk memuat ulang scoreboard dan jadwal.");
  }catch(e){toast("Pemulihan gagal: "+(e&&e.message?e.message:"File tidak bisa dibaca"))}
  this.value="";
 });
