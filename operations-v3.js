@@ -99,7 +99,7 @@ function showQR(memberId){
  for(const t of all){let m=t.members.find(m=>m.id===memberId);if(m){member=m;team=t;break}}
  if(!member){notice("Peserta tidak ditemukan.");return}
  currentQR={teamId:team.id,memberId:member.id};
- $("qr-card").hidden=false;
+ $("qr-card").hidden=false;$("qr-empty").hidden=true;
  setText("qr-owner",team.name+" · "+member.alias);
  setText("qr-expiry","Berlaku sampai "+fmt(member.expiresAt));
  setText("qr-token","Kode manual: CCSL1:"+member.token);
@@ -108,6 +108,7 @@ function showQR(memberId){
  $("qr-card").scrollIntoView({behavior:"smooth",block:"nearest"});
 }
 function recordCheckIn(raw){
+ if(role()==="viewer"){notice("Hanya admin atau marshal (demo) yang dapat memvalidasi check-in.");return false}
  const code=clean(raw,200).trim().toUpperCase().replace(/^CCSL1:/,"");
  if(!/^[0-9A-F]{32}$/.test(code)){notice("Format QR tidak valid.");return false}
  const all=teams();let member=null,team=null;
@@ -180,7 +181,8 @@ function dailyData(date){
  const responses=today.map(auditResponse).filter(v=>v!=null);
  const closed=today.filter(c=>c.status==="closed");
  const unresolved=today.filter(c=>c.status!=="closed");
- return {date,matches,today,closed,unresolved,avgResponse:responses.length?Math.round(responses.reduce((a,b)=>a+b,0)/responses.length):null,measured:responses.length};
+ const backlog=cases.filter(c=>c.status!=="closed"&&getCaseDate(c)&&getCaseDate(c)<date);
+ return {date,matches,today,closed,unresolved,backlog,avgResponse:responses.length?Math.round(responses.reduce((a,b)=>a+b,0)/responses.length):null,measured:responses.length};
 }
 function renderDaily(){
  let date=$("daily-date").value||day(new Date());
@@ -189,8 +191,10 @@ function renderDaily(){
  $("daily-new-count").textContent=r.today.length;
  $("daily-closed-count").textContent=r.closed.length;
  $("daily-open-count").textContent=r.unresolved.length;
+ $("daily-backlog-count").textContent=r.backlog.length;
  $("daily-response").textContent=r.avgResponse==null?"Belum ada data":r.avgResponse+" menit ("+r.measured+" kasus)";
  $("daily-match-list").innerHTML=r.matches.length?r.matches.map(s=>'<div class="schedule-line"><div><strong>'+esc(s.home)+" vs "+esc(s.away)+'</strong><small>'+esc(s.time)+" · "+esc(s.venue||"Lapangan menyusul")+'</small></div></div>').join(""):'<div class="empty">Tidak ada pertandingan terjadwal pada tanggal ini.</div>';
+ $("daily-backlog-list").innerHTML=r.backlog.length?r.backlog.map(c=>'<div class="case"><div><strong>'+esc(c.type)+'</strong><small>'+esc(c.id)+" · "+esc(getCaseDate(c))+"</small></div><span class=\"status open\">Belum selesai</span></div>").join(""):'<div class="empty">Tidak ada tunggakan dari hari sebelumnya.</div>';
  $("daily-incident-list").innerHTML=r.today.length?r.today.map(c=>'<div class="case"><div><strong>'+esc(c.type)+'</strong><small>'+esc(c.id)+" · "+esc(c.place)+'</small></div><span class="status '+esc(c.status)+'">'+esc(c.status)+'</span></div>').join(""):'<div class="empty">Tidak ada insiden yang dicatat pada tanggal ini.</div>';
  $("daily-report-period").textContent=new Date(date+"T12:00:00").toLocaleDateString("id-ID",{weekday:"long",day:"numeric",month:"long",year:"numeric"});
 }
@@ -201,7 +205,7 @@ function downloadText(name,text,type){
 }
 function downloadDaily(){
  const r=dailyData($("daily-date").value);
- const lines=[["CC SAFEGUARD DAILY REPORT"],["Tanggal",r.date],["Pertandingan",r.matches.length],["Insiden dicatat",r.today.length],["Selesai",r.closed.length],["Belum selesai",r.unresolved.length],["Rata-rata waktu respons (menit)",r.avgResponse==null?"N/A":r.avgResponse],[],["PERTANDINGAN"],["Tim A","Tim B","Tanggal","Jam","Lapangan","Durasi"]].concat(r.matches.map(s=>[s.home,s.away,s.date,s.time,s.venue,s.duration||60]),[[],["INSIDEN"],["ID","Jenis","Lokasi","Status","Waktu"]],r.today.map(c=>[c.id,c.type,c.place,c.status,c.time]));
+ const lines=[["CC SAFEGUARD DAILY REPORT"],["Tanggal",r.date],["Pertandingan",r.matches.length],["Insiden dicatat",r.today.length],["Selesai",r.closed.length],["Belum selesai",r.unresolved.length],["Tunggakan dari hari sebelumnya",r.backlog.length],["Rata-rata waktu respons (menit)",r.avgResponse==null?"N/A":r.avgResponse],[],["PERTANDINGAN"],["Tim A","Tim B","Tanggal","Jam","Lapangan","Durasi"]].concat(r.matches.map(s=>[s.home,s.away,s.date,s.time,s.venue,s.duration||60]),[[],["INSIDEN"],["ID","Jenis","Lokasi","Status","Waktu"]],r.today.map(c=>[c.id,c.type,c.place,c.status,c.time]));
  downloadText("safeguard-daily-"+r.date+".csv",lines.map(row=>row.map(safeCSV).join(",")).join("\r\n"),"text/csv;charset=utf-8")
 }
 function renderAudit(){
