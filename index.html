@@ -53,7 +53,7 @@
 <div class="panel"><div class="panel-head"><div><div class="eyebrow">UPCOMING MATCHES</div><h3>Jadwal terdekat</h3></div><button class="button soft" data-view="schedule" style="padding:7px 10px;min-height:32px">Lihat →</button></div><div id="schedule-preview"></div></div>
 <div class="panel"><div class="eyebrow">QUICK ACCESS</div><h3>Butuh tindakan?</h3><p style="color:#718699;font-size:12px;margin:0 0 14px">Catat insiden dan koordinasikan tindak lanjut lewat alur yang jelas.</p><div class="actions"><button class="button dark" data-view="cases">Pusat insiden →</button><button class="button soft" data-view="decisions">Rule Assistant</button></div></div>
 </div></div>
-<div class="day-operations-bar"><div><span class="day-indicator">● LIVE DAILY VIEW</span><strong id="today-label">Hari ini</strong><small>Aktivitas hari ini ditampilkan di dashboard. Laporan lama tersimpan di riwayat.</small></div><button class="button soft" data-view="history">▨ Riwayat <span id="archived-count">0</span> laporan →</button></div>
+<div class="day-operations-bar"><div><span class="day-indicator">● ACTIVE + PENDING VIEW</span><strong id="today-label">Hari ini</strong><small>Dashboard menampilkan insiden hari ini dan kasus lama yang belum selesai.</small></div><button class="button soft" data-view="history">▨ Riwayat <span id="archived-count">0</span> laporan →</button></div>
  <div class="metrics"><div class="metric"><div class="name"><span class="dot"></span>Total laporan</div><div class="number" id="m-total">0</div><div class="hint">Kasus yang tercatat</div></div>
 <div class="metric"><div class="name"><span class="dot amber"></span>Perlu tindak lanjut</div><div class="number" id="m-open">0</div><div class="hint">Baru dan ditugaskan</div></div>
 <div class="metric"><div class="name"><span class="dot blue"></span>Sedang ditangani</div><div class="number" id="m-progress">0</div><div class="hint">Penanganan berlangsung</div></div>
@@ -172,10 +172,10 @@
  <div class="history-stat"><small>Pertandingan</small><strong id="daily-match-count">0</strong></div>
  <div class="history-stat"><small>Laporan masuk</small><strong id="daily-new-count">0</strong></div>
  <div class="history-stat"><small>Selesai</small><strong id="daily-closed-count">0</strong></div>
- <div class="history-stat"><small>Belum selesai</small><strong id="daily-open-count">0</strong></div>
+ <div class="history-stat"><small>Belum selesai hari itu</small><strong id="daily-open-count">0</strong></div><div class="history-stat"><small>Tunggakan sebelumnya</small><strong id="daily-backlog-count">0</strong></div>
  </div>
  <div class="info-strip"><i>◷</i><span>Waktu respons rata-rata: <strong id="daily-response">Belum ada data</strong>. Dihitung dari laporan hingga pembaruan status pertama yang tercatat dalam audit.</span></div></div>
- <div class="cols" style="margin-top:17px"><div class="panel"><h3>Jadwal pertandingan</h3><div id="daily-match-list"></div></div><div class="panel"><h3>Insiden yang dicatat</h3><div id="daily-incident-list"></div></div></div>
+ <div class="cols" style="margin-top:17px"><div class="panel"><h3>Jadwal pertandingan</h3><div id="daily-match-list"></div></div><div class="panel"><h3>Insiden yang dicatat</h3><div id="daily-incident-list"></div></div></div><div class="panel" style="margin-top:16px"><h3>Kasus sebelumnya yang masih tertunda</h3><div id="daily-backlog-list"></div></div>
 </section>
 
 <section class="view" id="cards">
