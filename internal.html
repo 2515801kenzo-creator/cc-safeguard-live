@@ -54,7 +54,11 @@ button{border:0}.btn{border-radius:10px;padding:10px 15px;min-height:40px;font-s
 (()=>{"use strict";
 const DATA_KEY="ccsg_internal_reports_v2";
 const ROLE={clinic:"Klinik / P4K",committee:"Panitia",admin:"Admin"};
-const USER_ROLE={clinic123:"clinic",panit1927:"committee",admin123:"admin"};
+const USERNAME_ROLE_HASH={
+"fd3d1f047e53a5d4a95ce970dc8bc48cab0c7a85e69e3f92dcf4cf627591a984":"clinic",
+"cb054925a7a97373e7b4c6a0170a5010daa3bb02fbdd0c8cc0a258b6534981d9":"committee",
+"240be518fabd2724ddb6f04eeb1da5967448d7e831c08c8fa822809f74c720a9":"admin"
+};
 const RANK={Darurat:4,Tinggi:3,Sedang:2,Rendah:1};
 let db=loadDB(),user=null,detailId=null;
 const $=id=>document.getElementById(id);
@@ -66,19 +70,35 @@ function fakeReports(){return [];}
 function loadDB(){try{let x=JSON.parse(localStorage.getItem(DATA_KEY));if(x&&Array.isArray(x.reports))return{reports:x.reports,evaluations:Array.isArray(x.evaluations)?x.evaluations:[],audit:Array.isArray(x.audit)?x.audit:[]};}catch(e){}return{reports:fakeReports(),evaluations:[],audit:[]};}
 function save(){try{localStorage.setItem(DATA_KEY,JSON.stringify(db));return true;}catch(e){toast("Penyimpanan browser tidak tersedia atau penuh.");return false;}}
 function toast(s){$("toast").textContent=s;$("toast").hidden=false;clearTimeout(toast.timer);toast.timer=setTimeout(()=>$("toast").hidden=true,3500);}
-function audit(action,target,detail=""){db.audit.unshift({action,target,detail,at:now(),actor:user?.username||"Pelapor",role:user?.role||"public"});db.audit=db.audit.slice(0,250);}
-const DEMO_ACCOUNTS={
-clinic123:{salt:"xaTqoScj7uB+4tPx4PHYyQ==",hash:"9y/WHR3Z5WjdKRao8l7p7D8oMAfUd+zibDLmAokH3v4="},
-panit1927:{salt:"eifrBdyF/zSbUaAuR5UQDA==",hash:"Vgs99AxHrTkmNis4LAgdQHTXse5xgXXRhqhUy5hRhIc="},
-admin123:{salt:"nbnwfyUdOg3f0CqiSotpeg==",hash:"oxKy1S9SQ+U2Gl84J6H1Qq3V2Rpp6Tu6wSHyhL2YxAo="}
+function audit(action,target,detail=""){db.audit.unshift({action,target,detail,at:now(),actor:user?.name||"Pelapor",role:user?.role||"public"});db.audit=db.audit.slice(0,250);}
+const PASSWORD_VERIFIERS={
+clinic:{salt:"xaTqoScj7uB+4tPx4PHYyQ==",hash:"9y/WHR3Z5WjdKRao8l7p7D8oMAfUd+zibDLmAokH3v4="},
+committee:{salt:"eifrBdyF/zSbUaAuR5UQDA==",hash:"Vgs99AxHrTkmNis4LAgdQHTXse5xgXXRhqhUy5hRhIc="},
+admin:{salt:"nbnwfyUdOg3f0CqiSotpeg==",hash:"oxKy1S9SQ+U2Gl84J6H1Qq3V2Rpp6Tu6wSHyhL2YxAo="}
 };
 function fromBase64(s){return Uint8Array.from(atob(s),c=>c.charCodeAt(0));}
+async function hashUsername(username){const digest=await crypto.subtle.digest("SHA-256",new TextEncoder().encode(String(username).trim().toLowerCase()));return [...new Uint8Array(digest)].map(x=>x.toString(16).padStart(2,"0")).join("");}
 async function hashPassword(password,salt){if(!crypto?.subtle)throw new Error("Login memerlukan browser modern dan HTTPS.");const key=await crypto.subtle.importKey("raw",new TextEncoder().encode(password),"PBKDF2",false,["deriveBits"]);const bits=await crypto.subtle.deriveBits({name:"PBKDF2",salt:new Uint8Array(salt),iterations:120000,hash:"SHA-256"},key,256);return btoa(String.fromCharCode(...new Uint8Array(bits)));}
 async function checkPassword(password,record){return(await hashPassword(password,fromBase64(record.salt)))===record.hash;}
 function show(which){["login","app"].forEach(x=>$(x).hidden=x!==which);}
 function init(){show("login");$("privateForm").innerHTML=formHTML("private");events();save();}
 function formHTML(which){return'<form data-report-form="'+which+'"><div class="formgrid"><label class="field"><span>Nama pelapor *</span><input name="reporter" maxlength="70" required placeholder="Nama / identitas tugas"></label><label class="field"><span>Kategori *</span><select name="type"><option value="general">Umum / operasional</option><option value="medical">Medis / kesehatan</option></select></label><label class="field wide"><span>Judul kejadian *</span><input name="title" maxlength="100" required placeholder="Ringkas dan jelas"></label><label class="field"><span>Lokasi</span><input name="location" maxlength="100" placeholder="Lokasi contoh"></label><label class="field"><span>Urgensi awal</span><select name="priority"><option>Darurat</option><option>Tinggi</option><option selected>Sedang</option><option>Rendah</option></select></label><label class="field wide"><span>Kronologi / deskripsi *</span><textarea name="description" rows="4" maxlength="1200" required placeholder="Tuliskan fakta secara objektif. Gunakan data fiktif untuk tugas."></textarea></label></div><div class="notice" data-helper>Klasifikasi awal berdasarkan kata kunci membantu petugas menentukan urutan pemeriksaan. Bukan diagnosis medis.</div><p class="hint">Jangan masukkan informasi pribadi atau data kesehatan sungguhan.</p><button class="btn primary">Kirim laporan</button></form>';}
-async function signIn(e){e.preventDefault();let f=new FormData(e.target),name=String(f.get("username")).trim(),pass=String(f.get("password")),role=USER_ROLE[name],record=DEMO_ACCOUNTS[name];let valid=false;try{valid=!!role&&!!record&&await checkPassword(pass,record);}catch(err){toast(err.message||"Login gagal.");return;}if(!valid){$("loginError").hidden=false;return;}$("loginError").hidden=true;user={username:name,role,name:ROLE[role]};audit("Login",ROLE[role],"Masuk ke portal");save();$("displayUser").textContent=ROLE[role];$("displayRole").textContent=ROLE[role];$("avatar").textContent=ROLE[role][0];$("roleTitle").textContent=ROLE[role].toUpperCase();$("auditNav").hidden=role!=="admin";$("welcomeTitle").textContent=role==="clinic"?"Portal Klinik / P4K":role==="committee"?"Portal Panitia":"Dashboard Admin";$("welcomeText").textContent=role==="clinic"?"Laporan medis, prioritas, dan dokumentasi penanganan.":role==="committee"?"Laporan umum dan tindak lanjut operasional.":"Seluruh laporan, verifikasi, dan riwayat aktivitas.";show("app");go("overview");render();}
+async function signIn(e){
+e.preventDefault();
+const f=new FormData(e.target),name=String(f.get("username")).trim(),pass=String(f.get("password"));
+let role,record,valid=false;
+try{role=USERNAME_ROLE_HASH[await hashUsername(name)];record=PASSWORD_VERIFIERS[role];valid=!!role&&!!record&&await checkPassword(pass,record);}
+catch(err){toast(err.message||"Login gagal.");return;}
+if(!valid){$("loginError").hidden=false;return;}
+$("loginError").hidden=true;
+user={role,name:ROLE[role]};
+audit("Login",ROLE[role],"Masuk ke portal");save();
+$("displayUser").textContent=ROLE[role];$("displayRole").textContent=ROLE[role];$("avatar").textContent=ROLE[role][0];$("roleTitle").textContent=ROLE[role].toUpperCase();
+$("auditNav").hidden=role!=="admin";
+$("welcomeTitle").textContent=role==="clinic"?"Portal Klinik / P4K":role==="committee"?"Portal Panitia":"Dashboard Admin";
+$("welcomeText").textContent=role==="clinic"?"Laporan medis, prioritas, dan dokumentasi penanganan.":role==="committee"?"Laporan umum dan tindak lanjut operasional.":"Seluruh laporan, verifikasi, dan riwayat aktivitas.";
+show("app");go("overview");render();
+}
 function logout(){audit("Logout",ROLE[user.role],"Keluar dari portal");save();user=null;show("login");$("loginForm").reset();}
 function visible(){return db.reports.filter(r=>user.role==="admin"||(user.role==="clinic"?r.type==="medical":r.type==="general"));}
 function sorted(a){return[...a].sort((x,y)=>(RANK[y.priority]||0)-(RANK[x.priority]||0)||new Date(y.createdAt)-new Date(x.createdAt));}
