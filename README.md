@@ -146,8 +146,15 @@ A separate role-based demonstration portal is available for the CC SafeGuard tas
 - **Classification helper:** a simple local keyword rule for suggesting an initial priority. This is **not an AI model, medical advice or a diagnosis**.
 
 ### Demo setup and limitations
-- On first visit, set passwords for the preconfigured usernames **clinic123**, **panit1927**, and **admin123**. Password hashes are stored in that browser's local storage; passwords are not embedded in this public repository.
+- The root website opens directly at the login page. Enter one of the preconfigured usernames (**clinic123**, **panit1927**, or **admin123**) and its assigned demo password; a successful login opens the matching Klinik/P4K, Panitia, or Admin view. Password verifiers are stored as salted hashes in the public client code, not as readable passwords. This is still client-side demo authentication, not secure server-side authorization.
 - Reports, evaluations and activity history are stored in the current browser only. They do not synchronize across devices or users.
 - This portal is a functional **class-task demonstration**, not a secure production system. It has no central backend, shared database, server-side authentication, or secure medical-data handling.
 - Use fictional names and sample events only. Do not enter real student identities, health information or confidential school records.
 - For real internal use, replace the local demo authentication/storage with a properly configured backend, access-control rules and an approved data-retention policy.
+
+
+### Current navigation update
+- The website's root address now redirects to the role-based login portal.
+- **Team Check-In has been removed from the current website interface** and is not part of the internal reporting portal.
+- The old local operations script remains in the repository as legacy code, but the new login landing page does not load it.
+- The login, reports, and evaluation remain browser-local demonstrations. They are not suitable for real medical or school records.
