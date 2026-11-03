@@ -131,3 +131,23 @@ Only the repository owner controls collaborator access. Review major changes on 
 
 ## For a multi-device production edition
 Add a centrally secured backend (e.g. Firebase Auth + Firestore), validated role permissions, server-generated timestamps, matching event IDs, data retention rules, organizer authorization, real-time subscriptions, and Web Push/approved native notifications. A native iOS app is needed for reliable device haptics beyond ordinary web support.
+
+
+## Internal Reporting Portal (task demonstration)
+
+**Website:** https://2515801kenzo-creator.github.io/cc-safeguard-live/internal.html
+
+A separate role-based demonstration portal is available for the CC SafeGuard task:
+- **Klinik / P4K:** medical-category reports, urgency sorting, handler assignment, handling notes and printable report documents.
+- **Panitia:** general and operational reports, with a separate view from medical reports.
+- **Admin:** all reports, verification decisions, report edits, activity history and task-performance evaluation.
+- **Task evaluation:** a sample four-part rubric (discipline, responsibility, communication and teamwork), with CSV export.
+- **Report intake:** a public demo submission form and role-specific report lists. Reports are sorted by urgency.
+- **Classification helper:** a simple local keyword rule for suggesting an initial priority. This is **not an AI model, medical advice or a diagnosis**.
+
+### Demo setup and limitations
+- On first visit, set passwords for the preconfigured usernames **clinic123**, **panit1927**, and **admin123**. Password hashes are stored in that browser's local storage; passwords are not embedded in this public repository.
+- Reports, evaluations and activity history are stored in the current browser only. They do not synchronize across devices or users.
+- This portal is a functional **class-task demonstration**, not a secure production system. It has no central backend, shared database, server-side authentication, or secure medical-data handling.
+- Use fictional names and sample events only. Do not enter real student identities, health information or confidential school records.
+- For real internal use, replace the local demo authentication/storage with a properly configured backend, access-control rules and an approved data-retention policy.
