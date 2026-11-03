@@ -23,26 +23,16 @@ button{border:0}.btn{border-radius:10px;padding:10px 15px;min-height:40px;font-s
 <body>
 <header><a class="brand" href="index.html"><span class="mark">CC</span><span><b>CC SAFEGUARD</b><small>INTERNAL REPORTING PORTAL</small></span></a><span class="badge">MODE DEMONSTRASI</span></header>
 
-<section id="setup" class="auth" hidden>
- <div class="intro"><span class="eyebrow">PENGATURAN AWAL</span><h1>Siapkan akun<br><span>portal internal.</span></h1><p>Username sudah disiapkan sesuai pembagian peran. Buat password saat pertama kali membuka portal. Password tidak ditulis di source code repository.</p></div>
- <form id="setupForm" class="card"><span class="eyebrow">BUAT AKUN DEMO</span><h2>Pengaturan akun</h2><p class="muted">Atur kata sandi untuk masing-masing peran pada browser ini.</p>
-  <label class="field"><span>Klinik — clinic123</span><input name="clinic" type="password" minlength="8" required placeholder="Buat password Klinik"></label>
-  <label class="field"><span>Panitia — panit1927</span><input name="committee" type="password" minlength="8" required placeholder="Buat password Panitia"></label>
-  <label class="field"><span>Admin — admin123</span><input name="admin" type="password" minlength="8" required placeholder="Buat password Admin"></label>
-  <button class="btn primary full" type="submit">Simpan akun pada browser</button><p class="hint">Demo lokal saja: akun dan password ini tidak otomatis tersedia di perangkat lain. Untuk autentikasi sungguhan diperlukan backend.</p>
- </form>
-</section>
-
 <section id="login" class="auth" hidden>
  <div class="intro"><span class="eyebrow">CC CUP • INTERNAL OPERATIONS</span><h1>Satu pusat laporan.<br><span>Tindak lanjut yang jelas.</span></h1><p>Portal terpisah untuk Klinik/P4K, Panitia, dan Admin. Setiap peran memiliki tampilan dan kewenangan yang berbeda.</p>
   <div class="roles"><article><i class="role-icon">✚</i><div><b>Klinik / P4K</b><small>Laporan medis, prioritas, dan dokumentasi penanganan.</small></div></article><article><i class="role-icon">▤</i><div><b>Panitia</b><small>Insiden umum dan operasional kegiatan.</small></div></article><article><i class="role-icon">✓</i><div><b>Admin</b><small>Verifikasi, pemantauan, audit, dan penilaian.</small></div></article></div>
  </div>
- <form id="loginForm" class="card"><span class="eyebrow">AKSES INTERNAL</span><h2>Masuk ke portal</h2><p class="muted">Gunakan username dan password yang sudah diatur di browser ini.</p>
+ <form id="loginForm" class="card"><span class="eyebrow">AKSES INTERNAL</span><h2>Masuk ke portal</h2><p class="muted">Masukkan username dan password akun demonstrasi untuk membuka portal sesuai peran.</p>
   <label class="field"><span>Username</span><input name="username" required autocomplete="username" placeholder="clinic123 / panit1927 / admin123"></label>
   <label class="field"><span>Password</span><input name="password" type="password" required autocomplete="current-password" placeholder="Kata sandi"></label>
   <p id="loginError" style="color:#b33b48;font-size:11px" hidden>Username atau password tidak cocok.</p><button class="btn primary full">Masuk →</button>
   <hr><button type="button" class="btn secondary full" id="openPublic">Kirim laporan tanpa login</button>
-  <p class="hint">Akun ini hanya untuk penilaian tugas. Jangan masukkan data pribadi atau informasi medis sungguhan.</p>
+  <p class="hint">Akun demo untuk penilaian tugas. Login sisi browser bukan pengamanan produksi; jangan masukkan data pribadi atau informasi medis sungguhan.</p>
  </form>
 </section>
 
@@ -65,11 +55,11 @@ button{border:0}.btn{border-radius:10px;padding:10px 15px;min-height:40px;font-s
 
 <script>
 (()=>{"use strict";
-const ACCOUNT_KEY="ccsg_demo_account_hashes_v1",DATA_KEY="ccsg_internal_reports_v1";
+const DATA_KEY="ccsg_internal_reports_v1";
 const ROLE={clinic:"Klinik / P4K",committee:"Panitia",admin:"Admin"};
 const USER_ROLE={clinic123:"clinic",panit1927:"committee",admin123:"admin"};
 const RANK={Darurat:4,Tinggi:3,Sedang:2,Rendah:1};
-let accounts=null,db=loadDB(),user=null,detailId=null;
+let db=loadDB(),user=null,detailId=null;
 const $=id=>document.getElementById(id);
 const esc=s=>String(s??"").replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
 const now=()=>new Date().toISOString();
@@ -85,16 +75,18 @@ function loadDB(){try{let x=JSON.parse(localStorage.getItem(DATA_KEY));if(x&&Arr
 function save(){try{localStorage.setItem(DATA_KEY,JSON.stringify(db));return true;}catch(e){toast("Penyimpanan browser tidak tersedia atau penuh.");return false;}}
 function toast(s){$("toast").textContent=s;$("toast").hidden=false;clearTimeout(toast.timer);toast.timer=setTimeout(()=>$("toast").hidden=true,3500);}
 function audit(action,target,detail=""){db.audit.unshift({action,target,detail,at:now(),actor:user?.username||"Pelapor",role:user?.role||"public"});db.audit=db.audit.slice(0,250);}
-function base64(bytes){return btoa(String.fromCharCode(...new Uint8Array(bytes)));}
-async function hashPassword(password,salt){if(!crypto?.subtle)throw new Error("Gunakan website HTTPS agar pengamanan password demo dapat dijalankan.");const key=await crypto.subtle.importKey("raw",new TextEncoder().encode(password),"PBKDF2",false,["deriveBits"]);const bits=await crypto.subtle.deriveBits({name:"PBKDF2",salt:new Uint8Array(salt),iterations:120000,hash:"SHA-256"},key,256);return base64(bits);}
-async function createAccount(password){const salt=crypto.getRandomValues(new Uint8Array(16));return{salt:base64(salt),hash:await hashPassword(password,salt)};}
+const DEMO_ACCOUNTS={
+clinic123:{salt:"IkpNbdsA8KpwOAyodobguw==",hash:"p2DdxZOI/BsolDtbTvkpVPi8S2KvGCxpHl/0ytAW/s4="},
+panit1927:{salt:"jrRi+gn4lfHTchK6H8aeiQ==",hash:"itmE+0Z1hc0lTKoP8+v59OqnD40MIq4KFZJWCVUimdU="},
+admin123:{salt:"0ARGcZkij045C1sQPqaBTA==",hash:"uZUhq1ks4ldIddLFHx2UlUj55x068l9IQERpWWwaNnY="}
+};
 function fromBase64(s){return Uint8Array.from(atob(s),c=>c.charCodeAt(0));}
+async function hashPassword(password,salt){if(!crypto?.subtle)throw new Error("Login demo memerlukan browser modern dan HTTPS.");const key=await crypto.subtle.importKey("raw",new TextEncoder().encode(password),"PBKDF2",false,["deriveBits"]);const bits=await crypto.subtle.deriveBits({name:"PBKDF2",salt:new Uint8Array(salt),iterations:120000,hash:"SHA-256"},key,256);return btoa(String.fromCharCode(...new Uint8Array(bits)));}
 async function checkPassword(password,record){return(await hashPassword(password,fromBase64(record.salt)))===record.hash;}
-function show(which){["setup","login","publicReport","app"].forEach(x=>$(x).hidden=x!==which);}
-async function init(){try{accounts=JSON.parse(localStorage.getItem(ACCOUNT_KEY)||"null");}catch(e){accounts=null;}if(!accounts){show("setup");}else{show("login");}$("publicForm").innerHTML=formHTML("public");$("privateForm").innerHTML=formHTML("private");events();save();}
+function show(which){["login","publicReport","app"].forEach(x=>$(x).hidden=x!==which);}
+function init(){show("login");$("publicForm").innerHTML=formHTML("public");$("privateForm").innerHTML=formHTML("private");events();save();}
 function formHTML(which){return'<form data-report-form="'+which+'"><div class="formgrid"><label class="field"><span>Nama pelapor *</span><input name="reporter" maxlength="70" required placeholder="Nama / identitas tugas"></label><label class="field"><span>Kategori *</span><select name="type"><option value="general">Umum / operasional</option><option value="medical">Medis / kesehatan</option></select></label><label class="field wide"><span>Judul kejadian *</span><input name="title" maxlength="100" required placeholder="Ringkas dan jelas"></label><label class="field"><span>Lokasi</span><input name="location" maxlength="100" placeholder="Lokasi contoh"></label><label class="field"><span>Urgensi awal</span><select name="priority"><option>Darurat</option><option>Tinggi</option><option selected>Sedang</option><option>Rendah</option></select></label><label class="field wide"><span>Kronologi / deskripsi *</span><textarea name="description" rows="4" maxlength="1200" required placeholder="Tuliskan fakta secara objektif. Gunakan data fiktif untuk tugas."></textarea></label></div><div class="notice" data-helper>Saran klasifikasi sederhana akan muncul berdasarkan kata kunci. Bukan AI medis atau diagnosis.</div><p class="hint">Jangan masukkan informasi pribadi atau data kesehatan sungguhan.</p><button class="btn primary">Kirim laporan</button></form>';}
-async function setup(e){e.preventDefault();let f=new FormData(e.target),p=[f.get("clinic"),f.get("committee"),f.get("admin")];if(p.some(x=>String(x).length<8)){toast("Gunakan password demo minimal 8 karakter.");return;}try{let a={clinic123:await createAccount(p[0]),panit1927:await createAccount(p[1]),admin123:await createAccount(p[2])};localStorage.setItem(ACCOUNT_KEY,JSON.stringify(a));accounts=a;show("login");toast("Akun demo berhasil disiapkan pada browser ini.");}catch(err){toast(err.message||"Pengaturan akun gagal.");}}
-async function signIn(e){e.preventDefault();let f=new FormData(e.target),name=String(f.get("username")).trim(),pass=String(f.get("password")),role=USER_ROLE[name];if(!role||!accounts?.[name]||!(await checkPassword(pass,accounts[name]))){$("loginError").hidden=false;return;}$("loginError").hidden=true;user={username:name,role,name:ROLE[role]};audit("Login",ROLE[role],"Masuk ke portal");save();$("displayUser").textContent=ROLE[role];$("displayRole").textContent=ROLE[role];$("avatar").textContent=ROLE[role][0];$("roleTitle").textContent=ROLE[role].toUpperCase();$("evalNav").hidden=role!=="admin";$("auditNav").hidden=role!=="admin";$("evalPage").hidden=role!=="admin";$("welcomeTitle").textContent=role==="clinic"?"Portal Klinik / P4K":role==="committee"?"Portal Panitia":"Dashboard Admin";$("welcomeText").textContent=role==="clinic"?"Laporan medis, prioritas, dan dokumentasi penanganan.":role==="committee"?"Laporan umum dan tindak lanjut operasional.":"Seluruh laporan, verifikasi, audit, dan penilaian tugas.";show("app");go("overview");render();}
+async function signIn(e){e.preventDefault();let f=new FormData(e.target),name=String(f.get("username")).trim(),pass=String(f.get("password")),role=USER_ROLE[name],record=DEMO_ACCOUNTS[name];let valid=false;try{valid=!!role&&!!record&&await checkPassword(pass,record);}catch(err){toast(err.message||"Login gagal.");return;}if(!valid){$("loginError").hidden=false;return;}$("loginError").hidden=true;user={username:name,role,name:ROLE[role]};audit("Login",ROLE[role],"Masuk ke portal");save();$("displayUser").textContent=ROLE[role];$("displayRole").textContent=ROLE[role];$("avatar").textContent=ROLE[role][0];$("roleTitle").textContent=ROLE[role].toUpperCase();$("evalNav").hidden=role!=="admin";$("auditNav").hidden=role!=="admin";$("evalPage").hidden=role!=="admin";$("welcomeTitle").textContent=role==="clinic"?"Portal Klinik / P4K":role==="committee"?"Portal Panitia":"Dashboard Admin";$("welcomeText").textContent=role==="clinic"?"Laporan medis, prioritas, dan dokumentasi penanganan.":role==="committee"?"Laporan umum dan tindak lanjut operasional.":"Seluruh laporan, verifikasi, audit, dan penilaian tugas.";show("app");go("overview");render();}
 function logout(){audit("Logout",ROLE[user.role],"Keluar dari portal");save();user=null;show("login");$("loginForm").reset();}
 function visible(){return db.reports.filter(r=>user.role==="admin"||(user.role==="clinic"?r.type==="medical":r.type==="general"));}
 function sorted(a){return[...a].sort((x,y)=>(RANK[y.priority]||0)-(RANK[x.priority]||0)||new Date(y.createdAt)-new Date(x.createdAt));}
@@ -116,7 +108,7 @@ function renderEval(){let a=[...db.evaluations].reverse();$("evalList").innerHTM
 function renderAudit(){$("auditList").innerHTML=db.audit.slice(0,100).map(a=>'<div class="audititem"><b>'+esc(a.action)+' · '+esc(a.target)+'</b><small>'+esc(a.actor)+' ('+esc(a.role)+') · '+esc(date(a.at))+' '+esc(a.detail)+'</small></div>').join("")||'<div class="empty">Belum ada aktivitas.</div>';}
 function printCurrent(){let r=db.reports.find(x=>x.id===detailId);if(!r)return;$("printArea").innerHTML='<h1>CC SAFEGUARD — DOKUMEN LAPORAN DEMO</h1><p><b>ID:</b> '+esc(r.id)+' · <b>Tanggal:</b> '+esc(date(r.createdAt))+'</p><table><tr><th>Judul</th><td>'+esc(r.title)+'</td></tr><tr><th>Kategori</th><td>'+esc(r.type==="medical"?"Medis":"Umum")+'</td></tr><tr><th>Pelapor</th><td>'+esc(r.reporter)+'</td></tr><tr><th>Lokasi</th><td>'+esc(r.location)+'</td></tr><tr><th>Urgensi</th><td>'+esc(r.priority)+'</td></tr><tr><th>Status</th><td>'+esc(r.status)+'</td></tr><tr><th>Penanggung jawab</th><td>'+esc(r.assignee||"Belum ditentukan")+'</td></tr></table><h2>Kronologi</h2><p>'+esc(r.description)+'</p><h2>Penanganan</h2><p>'+esc(r.handling||"Belum ada catatan")+'</p><div class="sign"><div>Pelapor<br><br><br>(_________________)</div><div>Penanggung jawab<br><br><br>(_________________)</div></div><p>Dokumen contoh untuk tugas. Bukan dokumen medis resmi.</p>';window.print();}
 function events(){
-$("setupForm").addEventListener("submit",setup);$("loginForm").addEventListener("submit",signIn);$("logout").addEventListener("click",logout);
+$("loginForm").addEventListener("submit",signIn);$("logout").addEventListener("click",logout);
 $("openPublic").addEventListener("click",()=>show("publicReport"));$("backLogin").addEventListener("click",()=>show("login"));
 document.addEventListener("click",e=>{let n=e.target.closest("[data-page]");if(n)go(n.dataset.page);let g=e.target.closest("[data-goto]");if(g)go(g.dataset.goto);let o=e.target.closest("[data-open]");if(o)openDetail(o.dataset.open);if(e.target.id==="closeDetail"||e.target.id==="detailModal")$("detailModal").hidden=true;
 let v=e.target.closest("[data-verify]");if(v)mutate("Verifikasi laporan",r=>{r.verification=v.dataset.verify;r.status=v.dataset.verify==="Terverifikasi"?"Diverifikasi":v.dataset.verify==="Ditolak"?"Ditolak":"Perlu verifikasi";});
@@ -132,7 +124,7 @@ $("exportEval").addEventListener("click",()=>{csv(db.evaluations,["Nama","Tugas"
 $("evalForm").addEventListener("submit",e=>{e.preventDefault();let f=new FormData(e.target),r={discipline:+f.get("discipline"),responsibility:+f.get("responsibility"),communication:+f.get("communication"),teamwork:+f.get("teamwork")},score=Math.round(Object.values(r).reduce((a,b)=>a+b,0)*5);db.evaluations.push({name:f.get("name"),task:f.get("task"),r,score,notes:f.get("notes"),at:now(),evaluator:user.name});audit("Penilaian ditambahkan",f.get("name"),"Nilai "+score+"/100");save();e.target.reset();["discipline","responsibility","communication","teamwork"].forEach(x=>{$(x).value=3;$("v"+x[0].toUpperCase()+x.slice(1)).textContent="3";});renderEval();toast("Penilaian disimpan.");});
 ["discipline","responsibility","communication","teamwork"].forEach(x=>$(x).addEventListener("input",()=>{$("v"+x[0].toUpperCase()+x.slice(1)).textContent=$(x).value;}));
 }
-events();$("publicForm").innerHTML=formHTML("public");$("privateForm").innerHTML=formHTML("private");if(!db.reports.length){db.reports=fakeReports();save();}if(localStorage.getItem(ACCOUNT_KEY)){show("login");}else{show("setup");}
+events();$("publicForm").innerHTML=formHTML("public");$("privateForm").innerHTML=formHTML("private");if(!db.reports.length){db.reports=fakeReports();save();}show("login");
 })();
 </script>
 </body></html>
