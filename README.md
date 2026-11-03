@@ -133,28 +133,24 @@ Only the repository owner controls collaborator access. Review major changes on 
 Add a centrally secured backend (e.g. Firebase Auth + Firestore), validated role permissions, server-generated timestamps, matching event IDs, data retention rules, organizer authorization, real-time subscriptions, and Web Push/approved native notifications. A native iOS app is needed for reliable device haptics beyond ordinary web support.
 
 
-## Internal Reporting Portal (task demonstration)
+## Internal Reporting Portal
 
-**Website:** https://2515801kenzo-creator.github.io/cc-safeguard-live/internal.html
+**Website:** https://2515801kenzo-creator.github.io/cc-safeguard-live/
 
-A separate role-based demonstration portal is available for the CC SafeGuard task:
-- **Klinik / P4K:** medical-category reports, urgency sorting, handler assignment, handling notes and printable report documents.
-- **Panitia:** general and operational reports, with a separate view from medical reports.
-- **Admin:** all reports, verification decisions, report edits, activity history and task-performance evaluation.
-- **Task evaluation:** a sample four-part rubric (discipline, responsibility, communication and teamwork), with CSV export.
-- **Report intake:** a public demo submission form and role-specific report lists. Reports are sorted by urgency.
-- **Classification helper:** a simple local keyword rule for suggesting an initial priority. This is **not an AI model, medical advice or a diagnosis**.
+The website opens directly at a login screen. A successful sign-in routes the account to its role-specific workspace:
+- **Klinik / P4K:** medical-category reports, urgency sorting, handler assignment, handling notes, and printable report documents.
+- **Panitia:** general and operational reports, separated from medical reports.
+- **Admin:** all reports, verification decisions, editing, and activity history.
+- **Classification assistance:** a local keyword-based initial priority suggestion. It is not an AI model, medical advice, or a diagnosis.
 
-### Demo setup and limitations
-- The root website opens directly at the login page. Enter one of the preconfigured usernames (**clinic123**, **panit1927**, or **admin123**) and its assigned demo password; a successful login opens the matching Klinik/P4K, Panitia, or Admin view. Password verifiers are stored as salted hashes in the public client code, not as readable passwords. This is still client-side demo authentication, not secure server-side authorization.
-- Reports, evaluations and activity history are stored in the current browser only. They do not synchronize across devices or users.
-- This portal is a functional **class-task demonstration**, not a secure production system. It has no central backend, shared database, server-side authentication, or secure medical-data handling.
-- Use fictional names and sample events only. Do not enter real student identities, health information or confidential school records.
-- For real internal use, replace the local demo authentication/storage with a properly configured backend, access-control rules and an approved data-retention policy.
+### Access and data limitations
+- The login form does not display account IDs. Account IDs are stored as one-way hashes in the page source; password verifiers are salted PBKDF2 hashes. This is still **client-side authentication**, not secure server-side access control. A public static website cannot keep account credentials truly secret.
+- Reports and activity history are stored in the current browser only. They do not synchronize across devices or users.
+- The current GitHub Pages version has no central backend, shared database, server-side authorization, or secure medical-data handling.
+- Do not enter real student identities, medical information, or confidential school records. Do not use this version as the official CC Cup reporting or emergency channel.
+- Real deployment requires an approved backend, server-side authentication and authorization, database access rules, audit logging, backups, and an approved data-retention policy.
 
-
-### Current navigation update
-- The website's root address now redirects to the role-based login portal.
-- **Team Check-In has been removed from the current website interface** and is not part of the internal reporting portal.
-- The old local operations script remains in the repository as legacy code, but the new login landing page does not load it.
-- The login, reports, and evaluation remain browser-local demonstrations. They are not suitable for real medical or school records.
+### Current navigation
+- The website root redirects directly to the login portal.
+- Team Check-In is not included in the active website interface. Its older source files remain in the repository as legacy code and are not loaded by the login page.
+- The task-evaluation screen and no-login report shortcut have been removed from the current portal.
