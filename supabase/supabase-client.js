@@ -18,6 +18,8 @@
         auth: { persistSession: true, autoRefreshToken: true, detectSessionInUrl: true },
         realtime: { params: { eventsPerSecond: 10 } }
       });
+      // Event directory exposes only non-sensitive slug/name metadata so the
+      // browser can resolve the event before a user has authenticated.
       const { data, error } = await this.client.from("events").select("id,slug,name").eq("slug", config.eventSlug).single();
       if (error) throw error;
       this.event = data;
