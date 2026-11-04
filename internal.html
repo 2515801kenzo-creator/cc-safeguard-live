@@ -92,6 +92,9 @@ async function enterPortal(authUser){
  const profile=await loadCloudProfile(authUser);
  user={id:authUser.id,email:authUser.email,role:profile.role,name:profile.display_name||authUser.email};
  $("loginError").hidden=true;
+ const categorySelect=$("privateForm").querySelector('[name="type"]');
+ if(categorySelect&&user.role==="clinic")categorySelect.innerHTML='<option value="medical">Medis / kesehatan</option>';
+ if(categorySelect&&user.role==="committee")categorySelect.innerHTML='<option value="general">Umum / operasional</option>';
  await audit("Login",user.name);
  await loadCloudReports();
  subscribeRealtime();
