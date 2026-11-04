@@ -148,7 +148,7 @@ function printCurrent(){let r=db.reports.find(x=>x.id===detailId);if(!r)return;$
 async function createAccount(form){
  if(user?.role!=="admin"){toast("Hanya Admin yang dapat membuat akun.");return;}
  const d=new FormData(form),displayName=String(d.get("displayName")||"").trim(),email=String(d.get("email")||"").trim().toLowerCase(),role=String(d.get("role")||""),password=String(d.get("password")||"");
- if(displayName.length<2||displayName.length>80||!/^[^\\s@]+@[^\\s@]+\\.[^\\s@]+$/.test(email)||password.length<12||password.length>128||!["committee","clinic"].includes(role)){toast("Periksa nama, email, peran, dan password (minimal 12 karakter).");return;}
+ if(displayName.length<2||displayName.length>80||!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)||password.length<12||password.length>128||!["committee","clinic"].includes(role)){toast("Periksa nama, email, peran, dan password (minimal 12 karakter).");return;}
  const button=form.querySelector('button[type="submit"],button:not([type])');if(button){button.disabled=true;button.textContent="Membuat akun...";}
  try{
   const {data,error}=await supabase.functions.invoke("admin-create-user",{body:{email,password,display_name:displayName,role}});
