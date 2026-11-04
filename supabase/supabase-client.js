@@ -97,5 +97,14 @@
     if(result.error)throw result.error;
     return result.data||[];
   }
-  window.CCSG=Object.freeze({client:client,currentProfile:currentProfile,login:login,logout:logout,adminUserAction:adminUserAction,createReport:createReport,updateReport:updateReport,listReports:listReports,uploadReportPhoto:uploadReportPhoto,listReportPhotos:listReportPhotos,listActivity:listActivity});
+  function subscribeReportChanges(callback){
+    return client.channel("ccsg-live-reports")
+      .on("postgres_changes",{event:"*",schema:"public",table:"reports"},callback)
+      .on("postgres_changes",{event:"*",schema:"public",table:"report_photos"},callback)
+      .subscribe();
+  }
+  async function removeReportSubscription(channel){
+    if(channel)await client.removeChannel(channel);
+  }
+  window.CCSG=Object.freeze({client:client,currentProfile:currentProfile,login:login,logout:logout,adminUserAction:adminUserAction,createReport:createReport,updateReport:updateReport,listReports:listReports,uploadReportPhoto:uploadReportPhoto,listReportPhotos:listReportPhotos,listActivity:listActivity,subscribeReportChanges:subscribeReportChanges,removeReportSubscription:removeReportSubscription});
 })();
