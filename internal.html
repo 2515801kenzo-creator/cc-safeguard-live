@@ -236,7 +236,7 @@ async function renderAccounts(){
   const {data,error}=await supabase.from("profiles").select("id,username,display_name,role,is_active,created_at").order("created_at",{ascending:false});
   if(error)throw error;
   cloudProfiles=data||[];
-  list.innerHTML=cloudProfiles.length?cloudProfiles.map(a=>'<article class="item"><div class="itemtop"><div><h3>'+esc(a.display_name)+'</h3><span class="meta">'+esc(ROLE[a.role]||a.role)+'</span></div><span class="tag '+(a.is_active?'selesai':'Ditolak')+'">'+(a.is_active?'Aktif':'Nonaktif')+'</span></div><div class="meta">Dibuat: '+esc(date(a.created_at))+'</div></article>').join(""):'<div class="empty">Belum ada profil akun.</div>';
+  list.innerHTML=cloudProfiles.length?cloudProfiles.map(a=>'<article class="item"><div class="itemtop"><div><h3>'+esc(a.display_name)+'</h3><span class="meta">'+esc(a.username)+' · '+esc(ROLE[a.role]||a.role)+'</span></div><span class="tag '+(a.is_active?'selesai':'Ditolak')+'">'+(a.is_active?'Aktif':'Nonaktif')+'</span></div><div class="meta">Dibuat: '+esc(date(a.created_at))+'</div></article>').join(""):'<div class="empty">Belum ada profil akun.</div>';
  }catch(err){list.innerHTML='<div class="empty">Daftar akun gagal dimuat: '+esc(err.message||"Kesalahan database")+'</div>';}
 }
 function events(){
