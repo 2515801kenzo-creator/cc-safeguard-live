@@ -87,7 +87,7 @@ function renderList(){
 function go(page){
  document.querySelectorAll(".page").forEach(function(x){x.classList.toggle("active",x.dataset.view===page);});
  document.querySelectorAll(".nav button").forEach(function(x){x.classList.toggle("active",x.dataset.page===page);});
- if(page==="new"){$("privateForm").innerHTML=formHTML();bindReportForm();}
+ if(page==="new"){photoFiles=[];$("privateForm").innerHTML=formHTML();bindReportForm();}
  if(page==="accounts")loadAccounts();
  if(page==="audit")loadAudit();
 }
