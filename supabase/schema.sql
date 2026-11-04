@@ -182,14 +182,14 @@ using (exists (
 ));
 
 drop policy if exists "upload photo to own report" on public.report_photos;
-create policy "upload photo to own report" on public.report_photos
+drop policy if exists "upload photos for accessible reports" on public.report_photos;
+create policy "upload photos for accessible reports" on public.report_photos
 for insert to authenticated
 with check (
   uploaded_by = auth.uid()
   and exists (
     select 1 from public.reports r
     where r.id = report_id
-      and r.created_by = auth.uid()
       and public.can_access_report(r.category,r.created_by)
   )
 );
@@ -231,7 +231,11 @@ create trigger reports_activity_trigger
 after insert or update on public.reports
 for each row execute function public.log_report_activity();
 
--- Create the Storage bucket manually as PRIVATE before using photo upload.
+-- Ensure Storage bucket exists as PRIVATE (5 MB per file, JPG/PNG/WebP only).
+insert into storage.buckets (id,name,public,file_size_limit,allowed_mime_types)
+values ('ccsg-report-photos','ccsg-report-photos',false,5242880,array['image/jpeg','image/png','image/webp'])
+on conflict (id) do update
+set name=excluded.name,public=false,file_size_limit=excluded.file_size_limit,allowed_mime_types=excluded.allowed_mime_types;
 -- The first folder in each object path must be the report UUID.
 drop policy if exists "read photos with report access" on storage.objects;
 create policy "read photos with report access" on storage.objects
@@ -246,14 +250,14 @@ using (
 );
 
 drop policy if exists "upload photos to own reports" on storage.objects;
-create policy "upload photos to own reports" on storage.objects
+drop policy if exists "upload photos for accessible reports" on storage.objects;
+create policy "upload photos for accessible reports" on storage.objects
 for insert to authenticated
 with check (
   bucket_id='ccsg-report-photos'
   and exists (
     select 1 from public.reports r
     where r.id::text=(storage.foldername(name))[1]
-      and r.created_by=auth.uid()
       and public.can_access_report(r.category,r.created_by)
   )
 );
@@ -272,5 +276,6 @@ revoke all on function public.current_role() from public, anon;
 grant execute on function public.current_role() to authenticated;
 revoke all on function public.can_access_report(text,uuid) from public, anon;
 grant execute on function public.can_access_report(text,uuid) to authenticated;
+revoke all on function public.record_activity(text,text,text) from public, anon, authenticated;
 
 -- Bootstrap Admin steps are documented in README.md. Do not put service-role keys in frontend code.
