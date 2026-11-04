@@ -54,7 +54,6 @@ button{border:0}.btn{border-radius:10px;padding:10px 15px;min-height:40px;font-s
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <script>
 (()=>{"use strict";
-const DATA_KEY="ccsg_internal_reports_v2";
 const SUPABASE_URL="https://vhovzyzktrzenuulznzv.supabase.co";
 const SUPABASE_KEY="sb_publishable_PO48R3IsPnzH6ccOiafxWA_CTvZ_DVe";
 const supabase=window.supabase.createClient(SUPABASE_URL,SUPABASE_KEY,{auth:{persistSession:true,autoRefreshToken:true,detectSessionInUrl:true}});
@@ -67,17 +66,9 @@ const esc=s=>String(s??"").replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&
 const now=()=>new Date().toISOString();
 const date=s=>{const d=new Date(s);return isNaN(d)? "-":d.toLocaleString("id-ID",{dateStyle:"medium",timeStyle:"short"});};
 const id=()=> "CC-"+Date.now().toString(36).toUpperCase()+"-"+Math.random().toString(36).slice(2,6).toUpperCase();
-function fakeReports(){return [];}
-function loadDB(){try{let x=JSON.parse(localStorage.getItem(DATA_KEY));if(x&&Array.isArray(x.reports))return{reports:x.reports,evaluations:Array.isArray(x.evaluations)?x.evaluations:[],audit:Array.isArray(x.audit)?x.audit:[]};}catch(e){}return{reports:fakeReports(),evaluations:[],audit:[]};}
 function save(){return true;}
 function toast(s){$("toast").textContent=s;$("toast").hidden=false;clearTimeout(toast.timer);toast.timer=setTimeout(()=>$("toast").hidden=true,3500);}
 function audit(action,target,detail=""){if(!user)return Promise.resolve();return supabase.rpc("record_activity",{p_action:action,p_report_code:String(target||""),p_category:null}).then(({error})=>{if(error)console.warn("Activity log failed:",error.message);});}
-const PASSWORD_VERIFIERS={
-clinic:{salt:"xaTqoScj7uB+4tPx4PHYyQ==",hash:"9y/WHR3Z5WjdKRao8l7p7D8oMAfUd+zibDLmAokH3v4="},
-committee:{salt:"eifrBdyF/zSbUaAuR5UQDA==",hash:"Vgs99AxHrTkmNis4LAgdQHTXse5xgXXRhqhUy5hRhIc="},
-admin:{salt:"nbnwfyUdOg3f0CqiSotpeg==",hash:"oxKy1S9SQ+U2Gl84J6H1Qq3V2Rpp6Tu6wSHyhL2YxAo="}
-};
-function fromBase64(s){return Uint8Array.from(atob(s),c=>c.charCodeAt(0));}
 function show(which){["login","app"].forEach(x=>$(x).hidden=x!==which);}
 function init(){show("login");$("privateForm").innerHTML=formHTML("private");events();save();}
 function formHTML(which){return'<form data-report-form="'+which+'"><div class="formgrid"><label class="field"><span>Nama pelapor *</span><input name="reporter" maxlength="70" required placeholder="Nama / identitas tugas"></label><label class="field"><span>Kategori *</span><select name="type"><option value="general">Umum / operasional</option><option value="medical">Medis / kesehatan</option></select></label><label class="field wide"><span>Judul kejadian *</span><input name="title" maxlength="100" required placeholder="Ringkas dan jelas"></label><label class="field"><span>Lokasi</span><input name="location" maxlength="100" placeholder="Lokasi contoh"></label><label class="field"><span>Urgensi awal</span><select name="priority"><option>Darurat</option><option>Tinggi</option><option selected>Sedang</option><option>Rendah</option></select></label><label class="field wide"><span>Kronologi / deskripsi *</span><textarea name="description" rows="4" maxlength="1200" required placeholder="Tuliskan fakta secara objektif."></textarea></label><label class="field wide"><span>Tambah foto dari perangkat</span><input name="attachments" type="file" accept="image/jpeg,image/png,image/webp" multiple><small class="muted">JPG, PNG, atau WebP. Maksimal 5 MB per foto.</small></label><label class="field wide"><span>Ambil foto menggunakan kamera</span><input name="cameraPhoto" type="file" accept="image/*" capture="environment"><small class="muted">Pada ponsel, pilihan ini dapat membuka kamera belakang.</small></label></div><div class="notice" data-helper>Klasifikasi awal berdasarkan kata kunci membantu petugas menentukan urutan pemeriksaan. Bukan diagnosis medis.</div><p class="hint">Jangan masukkan informasi pribadi atau data kesehatan sungguhan.</p><button class="btn primary">Kirim laporan</button></form>';}
