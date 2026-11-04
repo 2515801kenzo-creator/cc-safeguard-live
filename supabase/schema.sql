@@ -254,7 +254,9 @@ grant select on public.profiles to authenticated;
 grant select,insert,update,delete on public.reports to authenticated;
 grant select,insert,delete on public.report_photos to authenticated;
 grant select on public.activity_log to authenticated;
+revoke all on function public.current_role() from public, anon;
 grant execute on function public.current_role() to authenticated;
+revoke all on function public.can_access_report(text,uuid) from public, anon;
 grant execute on function public.can_access_report(text,uuid) to authenticated;
 
 -- Bootstrap Admin steps are documented in README.md. Do not put service-role keys in frontend code.
