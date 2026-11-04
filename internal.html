@@ -162,7 +162,33 @@ function render(){let a=visible();$("mTotal").textContent=a.length;$("mReview").
 function renderList(){let q=$("search").value.toLowerCase(),st=$("filterStatus").value,pr=$("filterPriority").value;let a=sorted(visible().filter(r=>(!q||[r.id,r.title,r.reporter,r.description].join(" ").toLowerCase().includes(q))&&(!st||r.status===st)&&(!pr||r.priority===pr)));$("allReports").innerHTML=a.map(card).join("")||'<div class="empty">Tidak ada laporan yang cocok.</div>';$("reportSub").textContent=user.role==="clinic"?"Menampilkan laporan medis.":user.role==="committee"?"Menampilkan laporan umum.":"Admin dapat melihat semua kategori.";}
 function go(page){document.querySelectorAll(".page").forEach(x=>x.classList.toggle("active",x.dataset.view===page));document.querySelectorAll(".nav button").forEach(x=>x.classList.toggle("active",x.dataset.page===page));if(page==="reports")renderList();if(page==="audit")renderAudit();if(page==="accounts"&&user.role==="admin")renderAccounts();window.scrollTo(0,0);}
 function classify(text,type){let t=text.toLowerCase();if(type==="medical"&&/pingsan|tidak sadar|sulit bernapas|sesak napas|kejang|perdarahan/.test(t))return{level:"Darurat",note:"Kata kunci berisiko terdeteksi. Hubungi petugas medis/orang dewasa secara langsung; jangan menunggu aplikasi."};if(type==="medical"&&/cedera|jatuh|pusing|nyeri|sakit|demam|mual|bengkak/.test(t))return{level:"Tinggi",note:"Kata kunci keluhan terdeteksi; petugas klinik perlu meninjau langsung."};return{level:"Sedang",note:"Saran awal dari aturan kata kunci sederhana. Petugas tetap menentukan prioritas."};}
-function submitReport(form){let d=new FormData(form),type=d.get("type"),desc=String(d.get("description")).trim(),s=classify(desc,type),r={id:id(),title:String(d.get("title")).trim(),type,priority:d.get("priority"),status:"Perlu verifikasi",verification:"Menunggu",reporter:String(d.get("reporter")).trim(),location:String(d.get("location")||"Tidak dicantumkan").trim(),description:desc,createdAt:now(),assignee:"",handling:""};if(!r.title||!r.reporter||!desc){toast("Lengkapi semua kolom wajib.");return;}db.reports.unshift(r);audit("Laporan dibuat",r.id,(type==="medical"?"Medis":"Umum")+" · "+r.priority);save();form.reset();render();if(form.dataset.reportForm==="public"){show("login");toast("Laporan berhasil dicatat pada browser ini.");}else{go("reports");toast("Laporan berhasil disimpan.");}}
+async function submitReport(form){
+ const d=new FormData(form),type=String(d.get("type")||""),desc=String(d.get("description")||"").trim();
+ const title=String(d.get("title")||"").trim(),reporter=String(d.get("reporter")||"").trim();
+ const files=[...Array.from(form.querySelector('[name="attachments"]')?.files||[]),...Array.from(form.querySelector('[name="cameraPhoto"]')?.files||[])];
+ if(!title||!reporter||!desc){toast("Lengkapi semua kolom wajib.");return;}
+ if(files.some(file=>!["image/jpeg","image/png","image/webp"].includes(file.type)||file.size<1||file.size>5242880)){toast("Foto harus JPG, PNG, atau WebP dan maksimal 5 MB per file.");return;}
+ if(!user?.id){toast("Sesi login tidak ditemukan. Silakan masuk kembali.");return;}
+ const payload={report_code:id(),category:type,title,priority:String(d.get("priority")||"Sedang"),status:"Perlu verifikasi",verification:"Menunggu",reporter_name:reporter,location:String(d.get("location")||"Tidak dicantumkan").trim(),description:desc,assignee:"",handling_notes:"",created_by:user.id};
+ const submitButton=form.querySelector('button[type="submit"],button:not([type])');
+ if(submitButton){submitButton.disabled=true;submitButton.textContent="Menyimpan ke cloud...";}
+ try{
+  const {data:created,error}=await supabase.from("reports").insert(payload).select("*").single();
+  if(error)throw error;
+  let photoFailure="";
+  for(let i=0;i<files.length;i++){
+   const file=files[i],safeName=file.name.replace(/[^a-zA-Z0-9._-]+/g,"_").slice(0,80)||"photo";
+   const path=created.id+"/"+Date.now()+"-"+i+"-"+safeName;
+   const {error:uploadError}=await supabase.storage.from(PHOTO_BUCKET).upload(path,file,{contentType:file.type,upsert:false});
+   if(uploadError){photoFailure=uploadError.message;break;}
+   const {error:metaError}=await supabase.from("report_photos").insert({report_id:created.id,storage_path:path,file_name:file.name,content_type:file.type,size_bytes:file.size,uploaded_by:user.id});
+   if(metaError){await supabase.storage.from(PHOTO_BUCKET).remove([path]);photoFailure=metaError.message;break;}
+  }
+  form.reset();await loadCloudReports();go("reports");
+  toast(photoFailure?"Laporan tersimpan, tetapi sebagian foto gagal diunggah: "+photoFailure:"Laporan berhasil tersimpan di cloud"+(files.length?" beserta foto.":"."));
+ }catch(err){toast("Laporan gagal disimpan: "+(err.message||"Periksa koneksi dan hak akses."));}
+ finally{if(submitButton){submitButton.disabled=false;submitButton.textContent="Kirim laporan";}}
+}
 function openDetail(rid){let r=db.reports.find(x=>x.id===rid);if(!r)return;detailId=rid;let can=user.role==="admin"||(user.role==="clinic"&&r.type==="medical")||(user.role==="committee"&&r.type==="general");let h='<div class="detailgrid"><div class="detailcell"><small>ID</small><b>'+esc(r.id)+'</b></div><div class="detailcell"><small>KATEGORI</small><b>'+(r.type==="medical"?"Medis":"Umum")+'</b></div><div class="detailcell"><small>PELAPOR</small><b>'+esc(r.reporter)+'</b></div><div class="detailcell"><small>WAKTU</small><b>'+esc(date(r.createdAt))+'</b></div><div class="detailcell"><small>URGENSI</small><b>'+esc(r.priority)+'</b></div><div class="detailcell"><small>STATUS</small><b>'+esc(r.status)+'</b></div><div class="detailcell"><small>LOKASI</small><b>'+esc(r.location)+'</b></div><div class="detailcell"><small>VERIFIKASI</small><b>'+esc(r.verification)+'</b></div></div><p class="desc" style="font-size:12px;white-space:pre-wrap">'+esc(r.description)+'</p>';
 if(r.assignee||r.handling)h+='<div class="detailcell"><small>PENANGGUNG JAWAB</small><b>'+esc(r.assignee||"-")+'</b><p class="desc">'+esc(r.handling||"")+'</p></div>';
 if(user.role==="admin")h+='<div class="detailform"><h3>Verifikasi admin</h3><div class="actions"><button class="btn primary" data-verify="Terverifikasi">Verifikasi valid</button><button class="btn secondary" data-verify="Perlu pemeriksaan">Perlu pemeriksaan</button><button class="btn danger" data-verify="Ditolak">Tandai tidak valid</button></div><h3>Edit informasi</h3><label class="field"><span>Judul</span><input id="editTitle" value="'+esc(r.title)+'"></label><label class="field"><span>Deskripsi</span><textarea id="editDesc" rows="3">'+esc(r.description)+'</textarea></label><button class="btn secondary" data-edit>Simpan perubahan</button></div>';
