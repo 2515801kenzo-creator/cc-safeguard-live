@@ -82,9 +82,9 @@ function init(){show("login");$("privateForm").innerHTML=formHTML("private");eve
 function formHTML(which){return'<form data-report-form="'+which+'"><div class="formgrid"><label class="field"><span>Nama pelapor *</span><input name="reporter" maxlength="70" required placeholder="Nama / identitas tugas"></label><label class="field"><span>Kategori *</span><select name="type"><option value="general">Umum / operasional</option><option value="medical">Medis / kesehatan</option></select></label><label class="field wide"><span>Judul kejadian *</span><input name="title" maxlength="100" required placeholder="Ringkas dan jelas"></label><label class="field"><span>Lokasi</span><input name="location" maxlength="100" placeholder="Lokasi contoh"></label><label class="field"><span>Urgensi awal</span><select name="priority"><option>Darurat</option><option>Tinggi</option><option selected>Sedang</option><option>Rendah</option></select></label><label class="field wide"><span>Kronologi / deskripsi *</span><textarea name="description" rows="4" maxlength="1200" required placeholder="Tuliskan fakta secara objektif. Gunakan data fiktif untuk tugas."></textarea></label></div><div class="notice" data-helper>Klasifikasi awal berdasarkan kata kunci membantu petugas menentukan urutan pemeriksaan. Bukan diagnosis medis.</div><p class="hint">Jangan masukkan informasi pribadi atau data kesehatan sungguhan.</p><button class="btn primary">Kirim laporan</button></form>';}
 function showAuthError(message){const el=$("loginError");el.textContent=message;el.hidden=false;}
 async function loadCloudProfile(authUser){
- const {data:profile,error}=await supabase.from("profiles").select("id,display_name,role,active").eq("id",authUser.id).maybeSingle();
+ const {data:profile,error}=await supabase.from("profiles").select("id,display_name,role,is_active").eq("id",authUser.id).maybeSingle();
  if(error)throw new Error("Profil akun gagal dibaca: "+error.message);
- if(!profile||profile.active!==true||!ROLE[profile.role])throw new Error("Profil akun tidak ditemukan, belum aktif, atau perannya belum diatur. Hubungi Admin.");
+ if(!profile||profile.is_active!==true||!ROLE[profile.role])throw new Error("Profil akun tidak ditemukan, belum aktif, atau perannya belum diatur. Hubungi Admin.");
  return profile;
 }
 async function enterPortal(authUser){
@@ -166,10 +166,10 @@ async function renderAccounts(){
  const list=$("accountsList");if(!list)return;
  list.innerHTML='<div class="muted">Memuat akun cloud...</div>';
  try{
-  const {data,error}=await supabase.from("profiles").select("id,display_name,role,active,created_at").order("created_at",{ascending:false});
+  const {data,error}=await supabase.from("profiles").select("id,username,display_name,role,is_active,created_at").order("created_at",{ascending:false});
   if(error)throw error;
   cloudProfiles=data||[];
-  list.innerHTML=cloudProfiles.length?cloudProfiles.map(a=>'<article class="item"><div class="itemtop"><div><h3>'+esc(a.display_name)+'</h3><span class="meta">'+esc(ROLE[a.role]||a.role)+'</span></div><span class="tag '+(a.active?'selesai':'Ditolak')+'">'+(a.active?'Aktif':'Nonaktif')+'</span></div><div class="meta">Dibuat: '+esc(date(a.created_at))+'</div></article>').join(""):'<div class="empty">Belum ada profil akun.</div>';
+  list.innerHTML=cloudProfiles.length?cloudProfiles.map(a=>'<article class="item"><div class="itemtop"><div><h3>'+esc(a.display_name)+'</h3><span class="meta">'+esc(ROLE[a.role]||a.role)+'</span></div><span class="tag '+(a.is_active?'selesai':'Ditolak')+'">'+(a.active?'Aktif':'Nonaktif')+'</span></div><div class="meta">Dibuat: '+esc(date(a.created_at))+'</div></article>').join(""):'<div class="empty">Belum ada profil akun.</div>';
  }catch(err){list.innerHTML='<div class="empty">Daftar akun gagal dimuat: '+esc(err.message||"Kesalahan database")+'</div>';}
 }
 function events(){
