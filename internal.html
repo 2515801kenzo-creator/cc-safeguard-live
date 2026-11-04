@@ -118,13 +118,17 @@ function bindReportForm(){
   var fields={category:category,title:String(d.get("title")||"").trim(),reporter_name:String(d.get("reporter_name")||"").trim(),location:String(d.get("location")||"").trim(),priority:String(d.get("priority")||"Sedang"),description:String(d.get("description")||"").trim()};
   if(!fields.title||!fields.reporter_name||!fields.description){toast("Lengkapi kolom wajib terlebih dahulu.");return;}
   if(fields.priority==="Darurat")toast("Pastikan petugas medis diberi tahu secara langsung untuk keadaan darurat.");
-  button.disabled=true;button.textContent="Mengirim…";
+  button.disabled=true;button.textContent=photoFiles.length?"Menyimpan laporan & foto…":"Mengirim laporan…";
   try{
    var row=await CCSG.createReport(fields);
-   var photoErrors=[];
-   for(var j=0;j<photoFiles.length;j++){try{await CCSG.uploadReportPhoto(row.id,photoFiles[j]);}catch(photoError){photoErrors.push(photoFiles[j].name+": "+photoError.message);}}
+   var photoErrors=[],totalPhotos=photoFiles.length;
+   for(var j=0;j<totalPhotos;j++){
+    button.textContent="Mengunggah foto "+(j+1)+"/"+totalPhotos+"…";
+    try{await CCSG.uploadReportPhoto(row.id,photoFiles[j]);}
+    catch(photoError){photoErrors.push(photoFiles[j].name+": "+photoError.message);}
+   }
    photoFiles=[];f.reset();await refreshReports();go("reports");
-   toast(photoErrors.length?"Laporan tersimpan; sebagian foto gagal diunggah: "+photoErrors.join("; "):"Laporan berhasil dikirim ke database terpusat.");
+   toast(photoErrors.length?"Laporan tersimpan; sebagian foto gagal diunggah: "+photoErrors.join("; "):"Laporan dan foto berhasil dikirim ke database terpusat.");
   }catch(err){toast("Laporan gagal dikirim: "+err.message);}
   finally{button.disabled=false;button.textContent="Kirim laporan →";}
  });
