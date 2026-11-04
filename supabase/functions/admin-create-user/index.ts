@@ -87,14 +87,26 @@ Deno.serve(async (req) => {
 
   const { error: insertError } = await adminClient.from("profiles").insert({
     id: created.user.id,
+    username: email,
     display_name: displayName,
     role,
-    active: true,
+    is_active: true,
+    created_by: callerData.user.id,
   });
 
   if (insertError) {
     await adminClient.auth.admin.deleteUser(created.user.id);
     return response({ error: "Account profile could not be saved; the new auth account was rolled back." }, 500);
+  }
+
+  const { error: activityError } = await adminClient.from("activity_log").insert({
+    actor_id: callerData.user.id,
+    action: "Akun dibuat",
+    report_code: email,
+    category: role,
+  });
+  if (activityError) {
+    console.error("Account audit event could not be written:", activityError.message);
   }
 
   return response({ user_id: created.user.id, display_name: displayName, role }, 201);
