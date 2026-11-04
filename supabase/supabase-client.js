@@ -93,7 +93,7 @@
     }));
   }
   async function listActivity(){
-    var result=await client.from("activity_log").select("id,action,report_code,category,created_at").order("created_at",{ascending:false}).limit(100);
+    var result=await client.from("activity_log").select("id,actor_name,action,target_username,result,details,report_code,category,created_at").order("created_at",{ascending:false}).limit(100);
     if(result.error)throw result.error;
     return result.data||[];
   }
