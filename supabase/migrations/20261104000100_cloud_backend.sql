@@ -84,6 +84,31 @@ as $$
   )
 $$;
 
+create or replace function public.protect_report_identity()
+returns trigger
+language plpgsql
+set search_path = ''
+as $
+begin
+  if public.current_app_role() <> 'admin'
+     and (
+       new.id is distinct from old.id
+       or new.report_code is distinct from old.report_code
+       or new.category is distinct from old.category
+       or new.created_by is distinct from old.created_by
+       or new.created_at is distinct from old.created_at
+     ) then
+    raise exception 'Report identity and ownership fields cannot be changed.';
+  end if;
+  return new;
+end;
+$;
+
+drop trigger if exists reports_protect_identity on public.reports;
+create trigger reports_protect_identity
+before update on public.reports
+for each row execute function public.protect_report_identity();
+
 create or replace function public.set_report_updated_at()
 returns trigger
 language plpgsql
@@ -252,3 +277,12 @@ using (
   bucket_id = 'report-evidence'
   and public.current_app_role() = 'admin'
 );
+
+-- Enable database change broadcasts for the reports table.
+do $$
+begin
+  alter publication supabase_realtime add table public.reports;
+exception
+  when duplicate_object then null;
+end
+$$;
