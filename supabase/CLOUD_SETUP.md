@@ -1,6 +1,6 @@
 # CC SafeGuard Live — Cloud backend setup
 
-This branch adds the first shared-backend foundation for the existing static GitHub Pages portal.
+This branch adds the shared-backend foundation and connects the internal portal's login, profile lookup, and Admin account creation to Supabase Auth.
 
 ## What this enables
 
@@ -13,13 +13,13 @@ This branch adds the first shared-backend foundation for the existing static Git
 
 ## Important: not live yet
 
-The current deployed GitHub Pages site remains the existing browser-local version. These files do not connect it to a cloud project by themselves. A Supabase project must be created and configured, the SQL migration applied, the Edge Function deployed, and the frontend switched to the new Auth/database client before cross-device sync works.
+The frontend on this branch now uses Supabase Auth for login, reads the signed-in user's role from `profiles`, and calls the Admin-only Edge Function to create Clinic/Committee accounts. The SQL migration and Edge Function still must be applied/deployed in the Supabase project before those features work. Report content, activity history, and attachments in the current portal are still browser-local; cross-device report sync is a separate unfinished integration.
 
 Do not enter real student or medical information into the current site. For testing, use fictional data only. A real event deployment needs school/event-owner approval, an approved privacy notice, limited staff access, retention/deletion rules, and an adult/authorized IT administrator to manage the backend.
 
 ## 1. Create a Supabase project
 
-Create a project in the Supabase dashboard under an account managed by the authorized project owner. Keep the database password private. Choose a region appropriate for the event and review the provider's current plan limits and backup policy.
+The configured project reference is `vhovzyzktrzenuulznzv` and its API URL is `https://vhovzyzktrzenuulznzv.supabase.co`. Confirm that this is the school/event-owner-approved project before proceeding. Keep the database password private. Review the provider's current plan limits and backup policy.
 
 ## 2. Apply the database migration
 
