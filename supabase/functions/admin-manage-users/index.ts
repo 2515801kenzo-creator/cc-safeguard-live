@@ -5,7 +5,7 @@ const corsHeaders = (origin: string | null) => ({
   "Access-Control-Allow-Origin": origin === allowedOrigin ? origin : allowedOrigin,
   "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
   "Access-Control-Allow-Methods": "POST, OPTIONS",
-  "Vary: Origin",
+  "Vary": "Origin",
 });
 const reply = (data: unknown, status = 200, origin: string | null = null) =>
   new Response(JSON.stringify(data), {
