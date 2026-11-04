@@ -88,7 +88,7 @@ create or replace function public.protect_report_identity()
 returns trigger
 language plpgsql
 set search_path = ''
-as $
+as $$
 begin
   if public.current_app_role() <> 'admin'
      and (
@@ -102,7 +102,7 @@ begin
   end if;
   return new;
 end;
-$;
+$$;
 
 drop trigger if exists reports_protect_identity on public.reports;
 create trigger reports_protect_identity
