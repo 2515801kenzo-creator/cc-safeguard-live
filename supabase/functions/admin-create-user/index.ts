@@ -41,11 +41,11 @@ Deno.serve(async (req) => {
   });
   const { data: callerProfile, error: profileError } = await adminClient
     .from("profiles")
-    .select("role,active")
+    .select("role,is_active")
     .eq("id", callerData.user.id)
     .maybeSingle();
 
-  if (profileError || callerProfile?.role !== "admin" || callerProfile.active !== true) {
+  if (profileError || callerProfile?.role !== "admin" || callerProfile.is_active !== true) {
     return response({ error: "Only an active administrator can create accounts." }, 403);
   }
 
