@@ -55,12 +55,22 @@ var $=function(id){return document.getElementById(id);};
 var esc=function(s){return String(s==null?"":s).replace(/[&<>"']/g,function(c){return {"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c];});};
 var date=function(s){var d=new Date(s);return isNaN(d)?"-":d.toLocaleString("id-ID",{dateStyle:"medium",timeStyle:"short"});};
 var rank={Darurat:4,Tinggi:3,Sedang:2,Rendah:1};
-var user=null,reports=[],detailId=null,toastTimer=null,photoFiles=[];
+var user=null,reports=[],detailId=null,toastTimer=null,photoFiles=[],reportChannel=null;
 var roleName=function(r){return r==="clinic"?"Klinik / P3K":r==="committee"?"Panitia":"Admin";};
 var categoryName=function(c){return c==="medical"?"Medis":"Umum / operasional";};
 function toast(message){$("toast").textContent=message;$("toast").hidden=false;clearTimeout(toastTimer);toastTimer=setTimeout(function(){$("toast").hidden=true;},4000);}
 function showLogin(){user=null;$("app").hidden=true;$("login").hidden=false;}
 function showApp(){ $("login").hidden=true;$("app").hidden=false; }
+function startLiveSync(){
+ if(reportChannel){CCSG.removeReportSubscription(reportChannel);reportChannel=null;}
+ reportChannel=CCSG.subscribeReportChanges(function(){
+  refreshReports();
+  if(detailId&&!$("detailModal").hidden)openDetail(detailId);
+ });
+}
+function stopLiveSync(){
+ if(reportChannel){CCSG.removeReportSubscription(reportChannel);reportChannel=null;}
+}
 function roleCanSee(r){return user&& (user.role==="admin"||(user.role==="clinic"&&r.category==="medical")||(user.role==="committee"&&r.category==="general"&&r.created_by===user.id));}
 function formHTML(){
  var categoryField=user.role==="admin"?'<label class="field"><span>Kategori laporan *</span><select name="category"><option value="general">Umum / operasional</option><option value="medical">Medis / kesehatan</option></select></label>':'<div class="field"><span>Kategori laporan</span><div class="notice">'+categoryName(user.role==="clinic"?"medical":"general")+'</div></div>';
@@ -172,11 +182,11 @@ async function signIn(e){
   $("auditNav").hidden=user.role!=="admin";$("accountsNav").hidden=user.role!=="admin";
   $("welcomeTitle").textContent=user.role==="clinic"?"Portal Klinik / P3K":user.role==="committee"?"Portal Panitia":"Dashboard Admin";
   $("welcomeText").textContent=user.role==="clinic"?"Tinjau dan perbarui penanganan laporan medis.":user.role==="committee"?"Buat dan pantau laporan umum milik akun ini.":"Pantau laporan dan kelola akses pengguna.";
-  showApp();go("overview");await refreshReports();
+  showApp();startLiveSync();go("overview");await refreshReports();
  }catch(err){$("loginError").textContent=err.message||"Username atau kata sandi tidak sesuai.";$("loginError").hidden=false;}
  finally{b.disabled=false;b.textContent="Masuk →";}
 }
-async function logout(){try{await CCSG.logout();}catch(e){toast("Sesi keluar lokal; server mengembalikan pesan: "+e.message);}reports=[];showLogin();$("loginForm").reset();}
+async function logout(){stopLiveSync();try{await CCSG.logout();}catch(e){toast("Sesi keluar lokal; server mengembalikan pesan: "+e.message);}reports=[];showLogin();$("loginForm").reset();}
 function bindEvents(){
  $("loginForm").addEventListener("submit",signIn);
  $("logout").addEventListener("click",logout);
@@ -203,7 +213,7 @@ function bindEvents(){
 async function init(){
  bindEvents();showLogin();
  if(!window.CCSG){$("loginButton").disabled=true;$("loginError").textContent="Konfigurasi Supabase belum tersedia. Tambahkan file supabase-config.js sesuai petunjuk README."; $("loginError").hidden=false;return;}
- try{var p=await CCSG.currentProfile();if(p){user=p;$("displayUser").textContent=p.display_name;$("displayRole").textContent=roleName(p.role);$("avatar").textContent=roleName(p.role).slice(0,1);$("roleTitle").textContent=roleName(p.role).toUpperCase();$("auditNav").hidden=p.role!=="admin";$("accountsNav").hidden=p.role!=="admin";$("welcomeTitle").textContent=p.role==="admin"?"Dashboard Admin":p.role==="clinic"?"Portal Klinik / P3K":"Portal Panitia";$("welcomeText").textContent="Pantau laporan sesuai hak akses akun.";showApp();go("overview");await refreshReports();}}
+ try{var p=await CCSG.currentProfile();if(p){user=p;$("displayUser").textContent=p.display_name;$("displayRole").textContent=roleName(p.role);$("avatar").textContent=roleName(p.role).slice(0,1);$("roleTitle").textContent=roleName(p.role).toUpperCase();$("auditNav").hidden=p.role!=="admin";$("accountsNav").hidden=p.role!=="admin";$("welcomeTitle").textContent=p.role==="admin"?"Dashboard Admin":p.role==="clinic"?"Portal Klinik / P3K":"Portal Panitia";$("welcomeText").textContent="Pantau laporan sesuai hak akses akun.";showApp();startLiveSync();go("overview");await refreshReports();}}
  catch(e){toast("Sesi tidak dapat dipulihkan: "+e.message);}
 }
 init();
