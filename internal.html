@@ -27,12 +27,12 @@ button{border:0}.btn{border-radius:10px;padding:10px 15px;min-height:40px;font-s
  <div class="intro"><div class="school-event-lockup" aria-label="Identitas Kolese Kanisius dan CC Cup"><img class="login-school-logo" src="assets/kolese-kanisius-logo.svg" alt="Logo utama Kolese Kanisius"><span class="lockup-divider"></span><img class="login-cup-logo" src="assets/cc-cup-logo.svg" alt="Logo CC Cup XLI"><span class="lockup-copy"><b>KOLESE KANISIUS</b><small>CC CUP XLI • SAFE EVENT REPORTING</small></span></div><span class="eyebrow">CC CUP • INTERNAL OPERATIONS</span><h1>Satu pusat laporan.<br><span>Tindak lanjut yang jelas.</span></h1><p>Portal terpisah untuk Klinik/P4K, Panitia, dan Admin. Setiap peran memiliki tampilan dan kewenangan yang berbeda.</p>
   <div class="roles"><article><i class="role-icon">✚</i><div><b>Klinik / P3K</b><small>Laporan medis, prioritas, dan dokumentasi penanganan.</small></div></article><article><i class="role-icon">▤</i><div><b>Panitia</b><small>Insiden umum dan operasional kegiatan.</small></div></article><article><i class="role-icon">✓</i><div><b>Admin</b><small>Verifikasi, pemantauan, dan riwayat aktivitas.</small></div></article></div>
  </div>
- <form id="loginForm" class="card"><span class="eyebrow">AKSES INTERNAL</span><h2>Masuk ke portal</h2><p class="muted">Masukkan ID pengguna dan kata sandi untuk membuka portal sesuai hak akses.</p>
-  <label class="field"><span>ID pengguna</span><input name="username" required autocomplete="username" placeholder="Masukkan ID pengguna"></label>
+ <form id="loginForm" class="card"><span class="eyebrow">AKSES INTERNAL</span><h2>Masuk ke portal</h2><p class="muted">Masukkan email dan kata sandi akun CC SafeGuard yang telah dibuat Admin.</p>
+  <label class="field"><span>Email akun</span><input name="email" type="email" required autocomplete="username" placeholder="nama@contoh.com"></label>
   <label class="field"><span>Kata sandi</span><input name="password" type="password" required autocomplete="current-password" placeholder="Masukkan kata sandi"></label>
-  <p id="loginError" style="color:#b33b48;font-size:11px" hidden>ID pengguna atau kata sandi tidak sesuai.</p><button class="btn primary full">Masuk →</button>
+  <p id="loginError" style="color:#b33b48;font-size:11px" hidden></p><button class="btn primary full">Masuk →</button>
   
-  <p class="hint">Akses internal. Jangan masukkan data pribadi atau informasi medis pada versi yang belum terhubung ke server.</p>
+  <p class="hint">Akses internal terautentikasi. Gunakan hanya sesuai izin sekolah dan penyelenggara.</p>
  </form>
 </section>
 
@@ -44,33 +44,29 @@ button{border:0}.btn{border-radius:10px;padding:10px 15px;min-height:40px;font-s
   <section class="page" data-view="reports"><div class="heading"><div><span class="eyebrow">PENGELOLAAN</span><h1>Pusat laporan</h1><p id="reportSub">Daftar laporan sesuai akses pengguna.</p></div><div class="actions"><button class="btn secondary" id="exportReports">Ekspor CSV</button><button class="btn primary" data-goto="new">＋ Baru</button></div></div><section class="surface"><div class="filter"><input id="search" type="search" placeholder="Cari ID, pelapor, atau kejadian"><select id="filterStatus"><option value="">Semua status</option><option>Baru</option><option>Perlu verifikasi</option><option>Diverifikasi</option><option>Sedang ditangani</option><option>Selesai</option><option>Ditolak</option></select><select id="filterPriority"><option value="">Semua urgensi</option><option>Darurat</option><option>Tinggi</option><option>Sedang</option><option>Rendah</option></select></div><div id="allReports" class="list"></div></section></section>
   <section class="page" data-view="new"><div class="heading"><div><span class="eyebrow">FORMULIR TERPADU</span><h1>Buat laporan</h1><p>Tuliskan kronologi secara singkat, jelas, dan objektif.</p></div></div><section class="surface" id="privateForm"></section></section>
   <section class="page" data-view="audit"><div class="heading"><div><span class="eyebrow">TRANSPARANSI</span><h1>Riwayat aktivitas</h1><p>Riwayat tindakan dan perubahan dalam sistem.</p></div></div><section class="surface" id="auditList"></section></section>
-  <section class="page" data-view="accounts"><div class="heading"><div><span class="eyebrow">ADMINISTRASI</span><h1>Manajemen akun</h1><p>Buat dan kelola akun Panitia serta Klinik/P3K.</p></div></div><div class="notice"><b>Catatan:</b> akun di versi ini tersimpan pada browser yang sama. Belum bisa digunakan lintas perangkat sampai database server terhubung.</div><section class="surface"><h2>Buat akun baru</h2><form id="createAccountForm"><div class="formgrid"><label class="field"><span>Nama pengguna / nama lengkap *</span><input name="displayName" required maxlength="70" placeholder="Nama panitia atau petugas"></label><label class="field"><span>Username *</span><input name="username" required minlength="3" maxlength="24" pattern="[a-zA-Z0-9._-]+" autocomplete="off" placeholder="contoh: panitia01"></label><label class="field"><span>Peran *</span><select name="role"><option value="committee">Panitia</option><option value="clinic">Klinik / P3K</option></select></label><label class="field"><span>Password awal *</span><input name="password" type="password" required minlength="8" maxlength="128" autocomplete="new-password" placeholder="Minimal 8 karakter"></label></div><p class="hint">Sampaikan password awal secara pribadi kepada pemilik akun. Jangan kirim ke grup umum.</p><button class="btn primary">＋ Buat akun</button></form></section><section class="surface" style="margin-top:14px"><div class="itemtop"><h2>Daftar akun</h2><button class="btn secondary" id="refreshAccounts">Refresh</button></div><div id="accountsList" class="list"></div></section></section>
+  <section class="page" data-view="accounts"><div class="heading"><div><span class="eyebrow">ADMINISTRASI</span><h1>Manajemen akun</h1><p>Buat dan kelola akun Panitia serta Klinik/P3K.</p></div></div><div class="notice"><b>Akun cloud:</b> akun disimpan di Supabase Auth dan profil peran di database. Buat akun Panitia/Klinik melalui Admin.</div><section class="surface"><h2>Buat akun baru</h2><form id="createAccountForm"><div class="formgrid"><label class="field"><span>Nama pengguna / nama lengkap *</span><input name="displayName" required maxlength="70" placeholder="Nama panitia atau petugas"></label><label class="field"><span>Email akun *</span><input name="email" type="email" required autocomplete="off" placeholder="petugas@contoh.com"></label><label class="field"><span>Peran *</span><select name="role"><option value="committee">Panitia</option><option value="clinic">Klinik / P3K</option></select></label><label class="field"><span>Password awal *</span><input name="password" type="password" required minlength="12" maxlength="128" autocomplete="new-password" placeholder="Minimal 12 karakter"></label></div><p class="hint">Gunakan password kuat minimal 12 karakter. Sampaikan secara pribadi kepada pemilik akun.</p><button class="btn primary">＋ Buat akun</button></form></section><section class="surface" style="margin-top:14px"><div class="itemtop"><h2>Daftar akun</h2><button class="btn secondary" id="refreshAccounts">Refresh</button></div><div id="accountsList" class="list"></div></section></section>
   <footer class="footer">CC SafeGuard • Pusat Laporan Internal • Gunakan sesuai prosedur dan kewenangan.</footer>
  </main></div>
 </section>
 <section id="detailModal" class="modal" hidden><div class="modalbox"><div class="modalhead"><div><span class="eyebrow">DETAIL LAPORAN</span><h2 id="detailTitle"></h2></div><button class="btn secondary" id="closeDetail">Tutup</button></div><div id="detailBody"></div></div></section>
 <div class="print" id="printArea"></div><div id="toast" class="toast" hidden></div>
 
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <script>
 (()=>{"use strict";
 const DATA_KEY="ccsg_internal_reports_v2";
-const ACCOUNT_KEY="ccsg_internal_accounts_v1";
+const SUPABASE_URL="https://vhovzyzktrzenuulznzv.supabase.co";
+const SUPABASE_KEY="sb_publishable_PO48R3IsPnzH6ccOiafxWA_CTvZ_DVe";
+const supabase=window.supabase.createClient(SUPABASE_URL,SUPABASE_KEY,{auth:{persistSession:true,autoRefreshToken:true,detectSessionInUrl:true}});
 const ROLE={clinic:"Klinik / P3K",committee:"Panitia",admin:"Admin"};
-const USERNAME_ROLE_HASH={
-"fd3d1f047e53a5d4a95ce970dc8bc48cab0c7a85e69e3f92dcf4cf627591a984":"clinic",
-"cb054925a7a97373e7b4c6a0170a5010daa3bb02fbdd0c8cc0a258b6534981d9":"committee",
-"240be518fabd2724ddb6f04eeb1da5967448d7e831c08c8fa822809f74c720a9":"admin"
-};
 const RANK={Darurat:4,Tinggi:3,Sedang:2,Rendah:1};
-let db=loadDB(),user=null,detailId=null,localAccounts=loadAccounts();
+let db=loadDB(),user=null,detailId=null,cloudProfiles=[];
 const $=id=>document.getElementById(id);
 const esc=s=>String(s??"").replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
 const now=()=>new Date().toISOString();
 const date=s=>{const d=new Date(s);return isNaN(d)? "-":d.toLocaleString("id-ID",{dateStyle:"medium",timeStyle:"short"});};
 const id=()=> "CC-"+Date.now().toString(36).toUpperCase()+"-"+Math.random().toString(36).slice(2,6).toUpperCase();
 function fakeReports(){return [];}
-function loadAccounts(){try{let x=JSON.parse(localStorage.getItem(ACCOUNT_KEY));return Array.isArray(x)?x:[];}catch(e){return[];}}
-function saveAccounts(){try{localStorage.setItem(ACCOUNT_KEY,JSON.stringify(localAccounts));return true;}catch(e){toast("Penyimpanan akun browser penuh atau tidak tersedia.");return false;}}
 function loadDB(){try{let x=JSON.parse(localStorage.getItem(DATA_KEY));if(x&&Array.isArray(x.reports))return{reports:x.reports,evaluations:Array.isArray(x.evaluations)?x.evaluations:[],audit:Array.isArray(x.audit)?x.audit:[]};}catch(e){}return{reports:fakeReports(),evaluations:[],audit:[]};}
 function save(){try{localStorage.setItem(DATA_KEY,JSON.stringify(db));return true;}catch(e){toast("Penyimpanan browser tidak tersedia atau penuh.");return false;}}
 function toast(s){$("toast").textContent=s;$("toast").hidden=false;clearTimeout(toast.timer);toast.timer=setTimeout(()=>$("toast").hidden=true,3500);}
@@ -81,29 +77,55 @@ committee:{salt:"eifrBdyF/zSbUaAuR5UQDA==",hash:"Vgs99AxHrTkmNis4LAgdQHTXse5xgXX
 admin:{salt:"nbnwfyUdOg3f0CqiSotpeg==",hash:"oxKy1S9SQ+U2Gl84J6H1Qq3V2Rpp6Tu6wSHyhL2YxAo="}
 };
 function fromBase64(s){return Uint8Array.from(atob(s),c=>c.charCodeAt(0));}
-async function hashUsername(username){const digest=await crypto.subtle.digest("SHA-256",new TextEncoder().encode(String(username).trim().toLowerCase()));return [...new Uint8Array(digest)].map(x=>x.toString(16).padStart(2,"0")).join("");}
-async function hashPassword(password,salt){if(!crypto?.subtle)throw new Error("Login memerlukan browser modern dan HTTPS.");const key=await crypto.subtle.importKey("raw",new TextEncoder().encode(password),"PBKDF2",false,["deriveBits"]);const bits=await crypto.subtle.deriveBits({name:"PBKDF2",salt:new Uint8Array(salt),iterations:120000,hash:"SHA-256"},key,256);return btoa(String.fromCharCode(...new Uint8Array(bits)));}
-async function checkPassword(password,record){return(await hashPassword(password,fromBase64(record.salt)))===record.hash;}
 function show(which){["login","app"].forEach(x=>$(x).hidden=x!==which);}
 function init(){show("login");$("privateForm").innerHTML=formHTML("private");events();save();}
 function formHTML(which){return'<form data-report-form="'+which+'"><div class="formgrid"><label class="field"><span>Nama pelapor *</span><input name="reporter" maxlength="70" required placeholder="Nama / identitas tugas"></label><label class="field"><span>Kategori *</span><select name="type"><option value="general">Umum / operasional</option><option value="medical">Medis / kesehatan</option></select></label><label class="field wide"><span>Judul kejadian *</span><input name="title" maxlength="100" required placeholder="Ringkas dan jelas"></label><label class="field"><span>Lokasi</span><input name="location" maxlength="100" placeholder="Lokasi contoh"></label><label class="field"><span>Urgensi awal</span><select name="priority"><option>Darurat</option><option>Tinggi</option><option selected>Sedang</option><option>Rendah</option></select></label><label class="field wide"><span>Kronologi / deskripsi *</span><textarea name="description" rows="4" maxlength="1200" required placeholder="Tuliskan fakta secara objektif. Gunakan data fiktif untuk tugas."></textarea></label></div><div class="notice" data-helper>Klasifikasi awal berdasarkan kata kunci membantu petugas menentukan urutan pemeriksaan. Bukan diagnosis medis.</div><p class="hint">Jangan masukkan informasi pribadi atau data kesehatan sungguhan.</p><button class="btn primary">Kirim laporan</button></form>';}
-async function signIn(e){
-e.preventDefault();
-const f=new FormData(e.target),pass=String(f.get("password"));let name=String(f.get("username")).trim();
-let role,record,valid=false;
-try{const usernameHash=await hashUsername(name);const created=localAccounts.find(a=>a.usernameHash===usernameHash);if(created){role=created.role;record=created;valid=!!role&&created.active!==false&&await checkPassword(pass,record);if(valid)name=created.username;}else{role=USERNAME_ROLE_HASH[usernameHash];record=PASSWORD_VERIFIERS[role];valid=!!role&&!!record&&await checkPassword(pass,record);}}
-catch(err){toast(err.message||"Login gagal.");return;}
-if(!valid){$("loginError").hidden=false;return;}
-$("loginError").hidden=true;
-user={role,name:ROLE[role]};
-audit("Login",ROLE[role],"Masuk ke portal");save();
-$("displayUser").textContent=ROLE[role];$("displayRole").textContent=ROLE[role];$("avatar").textContent=ROLE[role][0];$("roleTitle").textContent=ROLE[role].toUpperCase();
-$("auditNav").hidden=role!=="admin";$("accountsNav").hidden=role!=="admin";
-$("welcomeTitle").textContent=role==="clinic"?"Portal Klinik / P3K":role==="committee"?"Portal Panitia":"Dashboard Admin";
-$("welcomeText").textContent=role==="clinic"?"Laporan medis, prioritas, dan dokumentasi penanganan.":role==="committee"?"Laporan umum dan tindak lanjut operasional.":"Seluruh laporan, verifikasi, dan riwayat aktivitas.";
-show("app");go("overview");render();
+function showAuthError(message){const el=$("loginError");el.textContent=message;el.hidden=false;}
+async function loadCloudProfile(authUser){
+ const {data:profile,error}=await supabase.from("profiles").select("id,display_name,role,active").eq("id",authUser.id).maybeSingle();
+ if(error)throw new Error("Profil akun gagal dibaca: "+error.message);
+ if(!profile||profile.active!==true||!ROLE[profile.role])throw new Error("Profil akun tidak ditemukan, belum aktif, atau perannya belum diatur. Hubungi Admin.");
+ return profile;
 }
-function logout(){audit("Logout",ROLE[user.role],"Keluar dari portal");save();user=null;show("login");$("loginForm").reset();}
+async function enterPortal(authUser){
+ const profile=await loadCloudProfile(authUser);
+ user={id:authUser.id,email:authUser.email,role:profile.role,name:profile.display_name||authUser.email};
+ $("loginError").hidden=true;
+ audit("Login",user.name,"Masuk ke portal cloud");
+ save();
+ $("displayUser").textContent=user.name;$("displayRole").textContent=ROLE[user.role];$("avatar").textContent=ROLE[user.role][0];$("roleTitle").textContent=ROLE[user.role].toUpperCase();
+ $("auditNav").hidden=user.role!=="admin";$("accountsNav").hidden=user.role!=="admin";
+ $("welcomeTitle").textContent=user.role==="clinic"?"Portal Klinik / P3K":user.role==="committee"?"Portal Panitia":"Dashboard Admin";
+ $("welcomeText").textContent=user.role==="clinic"?"Laporan medis, prioritas, dan dokumentasi penanganan.":user.role==="committee"?"Laporan umum dan tindak lanjut operasional.":"Seluruh laporan, verifikasi, dan riwayat aktivitas.";
+ show("app");go("overview");render();
+}
+async function signIn(e){
+ e.preventDefault();
+ const f=new FormData(e.target),email=String(f.get("email")||"").trim().toLowerCase(),password=String(f.get("password")||"");
+ const button=e.submitter||e.target.querySelector('button[type="submit"],button:not([type])');
+ if(button){button.disabled=true;button.textContent="Memeriksa...";}
+ $("loginError").hidden=true;
+ try{
+  const {data,error}=await supabase.auth.signInWithPassword({email,password});
+  if(error)throw error;
+  await enterPortal(data.user);
+ }catch(err){
+  const msg=err?.message||"Login gagal. Periksa koneksi dan konfigurasi Supabase.";
+  showAuthError(msg);
+  try{await supabase.auth.signOut();}catch(_){}
+ }finally{if(button){button.disabled=false;button.textContent="Masuk →";}}
+}
+async function logout(){
+ try{audit("Logout",user?.name||"Pengguna","Keluar dari portal");save();await supabase.auth.signOut();}
+ catch(err){toast("Gagal mengakhiri sesi cloud: "+(err.message||""));return;}
+ user=null;show("login");$("loginForm").reset();
+}
+async function restoreSession(){
+ try{
+  const {data,error}=await supabase.auth.getSession();if(error)throw error;
+  if(data.session?.user)await enterPortal(data.session.user);else show("login");
+ }catch(err){show("login");showAuthError("Sesi tidak dapat dipulihkan: "+(err.message||"Periksa konfigurasi Supabase."));}
+}
 function visible(){return db.reports.filter(r=>user.role==="admin"||(user.role==="clinic"?r.type==="medical":r.type==="general"));}
 function sorted(a){return[...a].sort((x,y)=>(RANK[y.priority]||0)-(RANK[x.priority]||0)||new Date(y.createdAt)-new Date(x.createdAt));}
 function card(r){let st=r.status.toLowerCase().replaceAll(" ","-");return'<article class="item"><div class="itemtop"><div><h3>'+esc(r.title)+'</h3><span class="meta">'+esc(r.id)+' · '+esc(date(r.createdAt))+'</span></div><span class="tag '+esc(r.priority)+'">'+esc(r.priority)+'</span></div><div class="tags"><span class="tag '+(r.type==="medical"?"medis":"")+'">'+(r.type==="medical"?"MEDIS":"UMUM")+'</span><span class="tag status '+st+'">'+esc(r.status)+'</span></div><p class="desc">'+esc(r.description).slice(0,210)+'</p><div class="itemfoot"><span class="meta">Pelapor: <b>'+esc(r.reporter)+'</b></span><button class="linkbtn" data-open="'+esc(r.id)+'">Buka detail →</button></div></article>';}
@@ -125,34 +147,37 @@ function printCurrent(){let r=db.reports.find(x=>x.id===detailId);if(!r)return;$
 
 async function createAccount(form){
  if(user?.role!=="admin"){toast("Hanya Admin yang dapat membuat akun.");return;}
- const d=new FormData(form),displayName=String(d.get("displayName")||"").trim(),username=String(d.get("username")||"").trim().toLowerCase(),role=String(d.get("role")||""),password=String(d.get("password")||"");
- if(displayName.length<2||! /^[a-z0-9][a-z0-9._-]{2,23}$/.test(username)||password.length<8||!["committee","clinic"].includes(role)){toast("Periksa nama, username, peran, dan password (minimal 8 karakter).");return;}
- const usernameHash=await hashUsername(username);
- if(localAccounts.some(a=>a.usernameHash===usernameHash)||Object.prototype.hasOwnProperty.call(USERNAME_ROLE_HASH,usernameHash)){toast("Username sudah digunakan. Pilih username lain.");return;}
- const saltBytes=crypto.getRandomValues(new Uint8Array(16)),salt=btoa(String.fromCharCode(...saltBytes)),hash=await hashPassword(password,saltBytes);
- localAccounts.push({username,usernameHash,displayName,role,salt,hash,active:true,createdAt:now(),createdBy:user.name});
- if(!saveAccounts()){localAccounts.pop();return;}
- audit("Akun dibuat",username,"Peran "+ROLE[role]);save();form.reset();renderAccounts();toast("Akun "+username+" berhasil dibuat. Simpan password awal dengan aman.");
+ const d=new FormData(form),displayName=String(d.get("displayName")||"").trim(),email=String(d.get("email")||"").trim().toLowerCase(),role=String(d.get("role")||""),password=String(d.get("password")||"");
+ if(displayName.length<2||displayName.length>80||!/^[^\\s@]+@[^\\s@]+\\.[^\\s@]+$/.test(email)||password.length<12||password.length>128||!["committee","clinic"].includes(role)){toast("Periksa nama, email, peran, dan password (minimal 12 karakter).");return;}
+ const button=form.querySelector('button[type="submit"],button:not([type])');if(button){button.disabled=true;button.textContent="Membuat akun...";}
+ try{
+  const {data,error}=await supabase.functions.invoke("admin-create-user",{body:{email,password,display_name:displayName,role}});
+  if(error)throw error;
+  if(data?.error)throw new Error(data.error);
+  audit("Akun cloud dibuat",email,"Peran "+ROLE[role]);save();form.reset();await renderAccounts();
+  toast("Akun "+email+" berhasil dibuat di cloud.");
+ }catch(err){
+  const details=err?.context?.json?.().catch?await err.context.json().catch(()=>null):null;
+  toast("Akun gagal dibuat: "+(details?.error||err.message||"Periksa Edge Function dan izin Admin."));
+ }finally{if(button){button.disabled=false;button.textContent="＋ Buat akun";}}
 }
-function renderAccounts(){
+async function renderAccounts(){
  if(user?.role!=="admin")return;
  const list=$("accountsList");if(!list)return;
- list.innerHTML=localAccounts.length?localAccounts.map((a,i)=>'<article class="item"><div class="itemtop"><div><h3>'+esc(a.displayName||a.username)+'</h3><span class="meta">@'+esc(a.username)+' · '+esc(ROLE[a.role]||a.role)+'</span></div><span class="tag '+(a.active===false?'Ditolak':'selesai')+'">'+(a.active===false?'Nonaktif':'Aktif')+'</span></div><div class="actions" style="margin-top:10px"><button class="btn secondary" data-account-toggle="'+i+'">'+(a.active===false?'Aktifkan':'Nonaktifkan')+'</button><button class="btn secondary" data-account-reset="'+i+'">Reset password</button></div></article>').join(""):'<div class="empty">Belum ada akun baru. Buat akun melalui formulir di atas.</div>';
+ list.innerHTML='<div class="muted">Memuat akun cloud...</div>';
+ try{
+  const {data,error}=await supabase.from("profiles").select("id,display_name,role,active,created_at").order("created_at",{ascending:false});
+  if(error)throw error;
+  cloudProfiles=data||[];
+  list.innerHTML=cloudProfiles.length?cloudProfiles.map(a=>'<article class="item"><div class="itemtop"><div><h3>'+esc(a.display_name)+'</h3><span class="meta">'+esc(ROLE[a.role]||a.role)+'</span></div><span class="tag '+(a.active?'selesai':'Ditolak')+'">'+(a.active?'Aktif':'Nonaktif')+'</span></div><div class="meta">Dibuat: '+esc(date(a.created_at))+'</div></article>').join(""):'<div class="empty">Belum ada profil akun.</div>';
+ }catch(err){list.innerHTML='<div class="empty">Daftar akun gagal dimuat: '+esc(err.message||"Kesalahan database")+'</div>';}
 }
-async function resetLocalAccountPassword(index){
- const a=localAccounts[index];if(!a)return;
- const password=prompt("Masukkan password baru untuk username "+a.username+" (minimal 8 karakter):");
- if(password===null)return;if(password.length<8){toast("Password minimal 8 karakter.");return;}
- const saltBytes=crypto.getRandomValues(new Uint8Array(16));a.salt=btoa(String.fromCharCode(...saltBytes));a.hash=await hashPassword(password,saltBytes);saveAccounts();audit("Reset password akun",a.username,"Password diperbarui Admin");save();toast("Password akun berhasil direset.");
-}
-
 function events(){
 $("loginForm").addEventListener("submit",signIn);$("logout").addEventListener("click",logout);
-$("createAccountForm").addEventListener("submit",e=>{e.preventDefault();createAccount(e.currentTarget);});$("refreshAccounts").addEventListener("click",renderAccounts);
+$("createAccountForm").addEventListener("submit",e=>{e.preventDefault();createAccount(e.currentTarget);});$("refreshAccounts").addEventListener("click",()=>renderAccounts());
 
 document.addEventListener("click",e=>{let n=e.target.closest("[data-page]");if(n)go(n.dataset.page);
-let toggleAccount=e.target.closest("[data-account-toggle]");if(toggleAccount){let a=localAccounts[Number(toggleAccount.dataset.accountToggle)];if(a){a.active=a.active===false;saveAccounts();audit(a.active?"Akun diaktifkan":"Akun dinonaktifkan",a.username,"");save();renderAccounts();toast("Status akun diperbarui.");}}
-let resetAccount=e.target.closest("[data-account-reset]");if(resetAccount)resetLocalAccountPassword(Number(resetAccount.dataset.accountReset));let g=e.target.closest("[data-goto]");if(g)go(g.dataset.goto);let o=e.target.closest("[data-open]");if(o)openDetail(o.dataset.open);if(e.target.id==="closeDetail"||e.target.id==="detailModal")$("detailModal").hidden=true;
+let g=e.target.closest("[data-goto]");if(g)go(g.dataset.goto);let o=e.target.closest("[data-open]");if(o)openDetail(o.dataset.open);if(e.target.id==="closeDetail"||e.target.id==="detailModal")$("detailModal").hidden=true;
 let v=e.target.closest("[data-verify]");if(v)mutate("Verifikasi laporan",r=>{r.verification=v.dataset.verify;r.status=v.dataset.verify==="Terverifikasi"?"Diverifikasi":v.dataset.verify==="Ditolak"?"Ditolak":"Perlu verifikasi";});
 let ed=e.target.closest("[data-edit]");if(ed){let title=$("editTitle").value.trim(),desc=$("editDesc").value.trim();if(!title||!desc){toast("Judul dan deskripsi wajib diisi.");return;}mutate("Edit laporan",r=>{r.title=title;r.description=desc;});}
 let h=e.target.closest("[data-handle]");if(h){let name=$("handler").value.trim(),notes=$("handling").value.trim();if(!name||!notes){toast("Isi penanggung jawab dan catatan penanganan.");return;}mutate("Catat penanganan",r=>{r.assignee=name;r.handling=notes;r.status=h.dataset.handle;});}
@@ -164,7 +189,7 @@ $("search").addEventListener("input",renderList);$("filterStatus").addEventListe
 $("exportReports").addEventListener("click",()=>{let a=visible();csv(a,["ID","Judul","Kategori","Urgensi","Status","Pelapor","Waktu","Penanggung jawab","Penanganan"],r=>[r.id,r.title,r.type,r.priority,r.status,r.reporter,date(r.createdAt),r.assignee,r.handling],"cc-safeguard-laporan.csv");audit("Ekspor laporan","CSV");save();});
 
 }
-events();$("privateForm").innerHTML=formHTML("private");show("login");
+events();$("privateForm").innerHTML=formHTML("private");show("login");restoreSession();
 })();
 </script>
 </body></html>
