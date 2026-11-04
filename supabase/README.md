@@ -47,10 +47,10 @@ Set the function secrets in Supabase Dashboard → Edge Functions → Secrets (o
 
 ## Access model (SQL policies)
 - Admin: all reports and account administration.
-- Panitia: general/operational reports only.
-- Klinik/P3K: medical reports only.
-- Report photos inherit the report's category permissions.
-- Only Admin can verify, edit, assign, or close reports in this first secure policy version.
+- Panitia: only general/operational reports created by their own account; other Panitia reports are hidden.
+- Klinik/P3K: all medical reports. Klinik may update only the handling status, responsible staff name, and handling notes on medical reports.
+- Admin can verify and manage all reports. A database trigger prevents Klinik from changing the reporter, description, category, priority, ownership, or other non-handling fields.
+- Report photos inherit the same report visibility and ownership permissions.
 
 ## Important
 Do not publish this branch or claim that account creation/photo upload is live until:
