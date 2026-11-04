@@ -68,17 +68,18 @@ as $$
   limit 1;
 $$;
 
-create or replace function public.can_access_report(report_category text)
+drop function if exists public.can_access_report(text);
+create or replace function public.can_access_report(report_category text, report_owner uuid)
 returns boolean language sql stable security definer
 set search_path = public
-as $$
+as $
   select case public.current_role()
     when 'admin' then true
     when 'clinic' then report_category = 'medical'
-    when 'committee' then report_category = 'general'
+    when 'committee' then report_category = 'general' and report_owner = auth.uid()
     else false
   end;
-$$;
+$;
 
 alter table public.profiles enable row level security;
 alter table public.reports enable row level security;
@@ -95,23 +96,65 @@ using (id = auth.uid() or public.current_role() = 'admin');
 drop policy if exists "read reports by role" on public.reports;
 create policy "read reports by role" on public.reports
 for select to authenticated
-using (public.can_access_report(category));
+using (public.can_access_report(category, created_by));
 
 drop policy if exists "insert reports by role" on public.reports;
 create policy "insert reports by role" on public.reports
 for insert to authenticated
 with check (
   created_by = auth.uid()
-  and public.can_access_report(category)
+  and public.can_access_report(category, created_by)
   and public.current_role() in ('admin','clinic','committee')
 );
 
--- Only Admin can edit/verify/assign/close reports. This keeps the audit trail controlled.
+-- Admin may manage all reports. Klinik may update handling fields on medical reports only.
 drop policy if exists "admin update reports" on public.reports;
 create policy "admin update reports" on public.reports
 for update to authenticated
 using (public.current_role() = 'admin')
 with check (public.current_role() = 'admin');
+
+drop policy if exists "clinic update medical handling" on public.reports;
+create policy "clinic update medical handling" on public.reports
+for update to authenticated
+using (public.current_role() = 'clinic' and category = 'medical')
+with check (public.current_role() = 'clinic' and category = 'medical');
+
+-- Column guard: Klinik cannot change the report description, reporter, category,
+-- ownership, priority, or other fields. It can only update handling status,
+-- responsible person, notes, and updated_at.
+create or replace function public.guard_report_update_fields()
+returns trigger language plpgsql
+set search_path = public
+as $
+begin
+  if public.current_role() = 'clinic' then
+    if old.category <> 'medical' or new.category <> 'medical' then
+      raise exception 'Klinik hanya dapat menangani laporan medis.';
+    end if;
+
+    if (to_jsonb(new) - array['status','assignee','handling_notes','updated_at'])
+       <> (to_jsonb(old) - array['status','assignee','handling_notes','updated_at']) then
+      raise exception 'Klinik hanya boleh mengubah status dan informasi penanganan.';
+    end if;
+
+    if new.status not in ('Sedang ditangani','Selesai') then
+      raise exception 'Status penanganan Klinik tidak valid.';
+    end if;
+
+    if new.assignee is null or btrim(new.assignee) = '' then
+      raise exception 'Nama petugas yang menangani wajib diisi.';
+    end if;
+  end if;
+
+  return new;
+end;
+$;
+
+drop trigger if exists reports_guard_update_trigger on public.reports;
+create trigger reports_guard_update_trigger
+before update on public.reports
+for each row execute function public.guard_report_update_fields();
 
 drop policy if exists "admin delete reports" on public.reports;
 create policy "admin delete reports" on public.reports
@@ -124,7 +167,7 @@ create policy "read photos with report access" on public.report_photos
 for select to authenticated
 using (exists (
   select 1 from public.reports r
-  where r.id = report_id and public.can_access_report(r.category)
+  where r.id = report_id and public.can_access_report(r.category, r.created_by)
 ));
 
 drop policy if exists "upload photo to own report" on public.report_photos;
@@ -136,7 +179,7 @@ with check (
     select 1 from public.reports r
     where r.id = report_id
       and r.created_by = auth.uid()
-      and public.can_access_report(r.category)
+      and public.can_access_report(r.category, r.created_by)
   )
 );
 
@@ -191,7 +234,7 @@ using (
   and exists (
     select 1 from public.reports r
     where r.id::text = (storage.foldername(name))[1]
-      and public.can_access_report(r.category)
+      and public.can_access_report(r.category, r.created_by)
   )
 );
 
@@ -204,7 +247,7 @@ with check (
     select 1 from public.reports r
     where r.id::text = (storage.foldername(name))[1]
       and r.created_by = auth.uid()
-      and public.can_access_report(r.category)
+      and public.can_access_report(r.category, r.created_by)
   )
 );
 
