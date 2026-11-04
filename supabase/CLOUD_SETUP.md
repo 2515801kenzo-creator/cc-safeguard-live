@@ -2,8 +2,9 @@
 
 Project reference: `vhovzyzktrzenuulznzv`
 
-This branch is being aligned with the existing Supabase schema. The integration migration
-`20261104151817_existing_schema_cloud_integration.sql` has been applied to that project.
+This branch is aligned with the existing Supabase schema. These migrations have been applied to the project:
+- `20261104151817_existing_schema_cloud_integration.sql`
+- `20261104152138_allow_evidence_upload_for_accessible_reports.sql`
 
 ## Current cloud features
 
