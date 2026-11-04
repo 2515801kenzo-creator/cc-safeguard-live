@@ -204,7 +204,18 @@ async function mutate(action,fn){
  await loadCloudReports();openDetail(detailId);
 }
 function csv(rows,headers,map,file){let q=x=>'"'+String(x??"").replace(/"/g,'""')+'"';let data=[headers.map(q).join(","),...rows.map(x=>map(x).map(q).join(","))].join("\r\n");let blob=new Blob(["\ufeff"+data],{type:"text/csv;charset=utf-8"}),url=URL.createObjectURL(blob),a=document.createElement("a");a.href=url;a.download=file;a.click();URL.revokeObjectURL(url);}
-function renderAudit(){$("auditList").innerHTML=db.audit.slice(0,100).map(a=>'<div class="audititem"><b>'+esc(a.action)+' · '+esc(a.target)+'</b><small>'+esc(a.actor)+' ('+esc(a.role)+') · '+esc(date(a.at))+' '+esc(a.detail)+'</small></div>').join("")||'<div class="empty">Belum ada aktivitas.</div>';}
+async function renderAudit(){
+ const list=$("auditList");list.innerHTML='<div class="muted">Memuat riwayat dari cloud...</div>';
+ try{
+  const {data,error}=await supabase.from("activity_log").select("id,actor_id,action,report_id,report_code,category,created_at").order("created_at",{ascending:false}).limit(150);
+  if(error)throw error;
+  const actorIds=[...new Set((data||[]).map(a=>a.actor_id).filter(Boolean))];
+  let profiles=[];
+  if(actorIds.length){const p=await supabase.from("profiles").select("id,display_name,role").in("id",actorIds);if(!p.error)profiles=p.data||[];}
+  const byId=new Map(profiles.map(p=>[p.id,p]));
+  list.innerHTML=(data||[]).map(a=>{const actor=byId.get(a.actor_id);return '<div class="audititem"><b>'+esc(a.action)+' · '+esc(a.report_code||a.report_id||"-")+'</b><small>'+esc(actor?.display_name||"Pengguna tidak diketahui")+' ('+esc(ROLE[actor?.role]||actor?.role||"akun")+') · '+esc(date(a.created_at))+(a.category?' · '+esc(a.category):"")+'</small></div>';}).join("")||'<div class="empty">Belum ada aktivitas.</div>';
+ }catch(err){list.innerHTML='<div class="empty">Riwayat gagal dimuat: '+esc(err.message||"Kesalahan database")+'</div>';}
+}
 function printCurrent(){let r=db.reports.find(x=>x.id===detailId);if(!r)return;$("printArea").innerHTML='<h1>CC SAFEGUARD — DOKUMEN LAPORAN</h1><p><b>ID:</b> '+esc(r.id)+' · <b>Tanggal:</b> '+esc(date(r.createdAt))+'</p><table><tr><th>Judul</th><td>'+esc(r.title)+'</td></tr><tr><th>Kategori</th><td>'+esc(r.type==="medical"?"Medis":"Umum")+'</td></tr><tr><th>Pelapor</th><td>'+esc(r.reporter)+'</td></tr><tr><th>Lokasi</th><td>'+esc(r.location)+'</td></tr><tr><th>Urgensi</th><td>'+esc(r.priority)+'</td></tr><tr><th>Status</th><td>'+esc(r.status)+'</td></tr><tr><th>Penanggung jawab</th><td>'+esc(r.assignee||"Belum ditentukan")+'</td></tr></table><h2>Kronologi</h2><p>'+esc(r.description)+'</p><h2>Penanganan</h2><p>'+esc(r.handling||"Belum ada catatan")+'</p><div class="sign"><div>Pelapor<br><br><br>(_________________)</div><div>Penanggung jawab<br><br><br>(_________________)</div></div><p>Dokumen pencatatan kegiatan. Ikuti prosedur resmi penanggung jawab untuk setiap kejadian.</p>';window.print();}
 
 async function createAccount(form){
@@ -216,7 +227,7 @@ async function createAccount(form){
   const {data,error}=await supabase.functions.invoke("admin-create-user",{body:{email,password,display_name:displayName,role}});
   if(error)throw error;
   if(data?.error)throw new Error(data.error);
-  audit("Akun cloud dibuat",email,"Peran "+ROLE[role]);save();form.reset();await renderAccounts();
+  form.reset();await renderAccounts();
   toast("Akun "+email+" berhasil dibuat di cloud.");
  }catch(err){
   let details=null;try{if(err?.context?.json)details=await err.context.json();}catch(_){}
@@ -231,7 +242,7 @@ async function renderAccounts(){
   const {data,error}=await supabase.from("profiles").select("id,username,display_name,role,is_active,created_at").order("created_at",{ascending:false});
   if(error)throw error;
   cloudProfiles=data||[];
-  list.innerHTML=cloudProfiles.length?cloudProfiles.map(a=>'<article class="item"><div class="itemtop"><div><h3>'+esc(a.display_name)+'</h3><span class="meta">'+esc(ROLE[a.role]||a.role)+'</span></div><span class="tag '+(a.is_active?'selesai':'Ditolak')+'">'+(a.active?'Aktif':'Nonaktif')+'</span></div><div class="meta">Dibuat: '+esc(date(a.created_at))+'</div></article>').join(""):'<div class="empty">Belum ada profil akun.</div>';
+  list.innerHTML=cloudProfiles.length?cloudProfiles.map(a=>'<article class="item"><div class="itemtop"><div><h3>'+esc(a.display_name)+'</h3><span class="meta">'+esc(ROLE[a.role]||a.role)+'</span></div><span class="tag '+(a.is_active?'selesai':'Ditolak')+'">'+(a.is_active?'Aktif':'Nonaktif')+'</span></div><div class="meta">Dibuat: '+esc(date(a.created_at))+'</div></article>').join(""):'<div class="empty">Belum ada profil akun.</div>';
  }catch(err){list.innerHTML='<div class="empty">Daftar akun gagal dimuat: '+esc(err.message||"Kesalahan database")+'</div>';}
 }
 function events(){
