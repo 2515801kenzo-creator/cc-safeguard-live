@@ -157,7 +157,7 @@ async function createAccount(form){
   audit("Akun cloud dibuat",email,"Peran "+ROLE[role]);save();form.reset();await renderAccounts();
   toast("Akun "+email+" berhasil dibuat di cloud.");
  }catch(err){
-  const details=err?.context?.json?.().catch?await err.context.json().catch(()=>null):null;
+  let details=null;try{if(err?.context?.json)details=await err.context.json();}catch(_){}
   toast("Akun gagal dibuat: "+(details?.error||err.message||"Periksa Edge Function dan izin Admin."));
  }finally{if(button){button.disabled=false;button.textContent="＋ Buat akun";}}
 }
