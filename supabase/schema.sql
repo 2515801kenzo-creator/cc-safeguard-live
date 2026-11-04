@@ -123,9 +123,11 @@ alter table public.audit_events enable row level security;
 alter table public.notification_preferences enable row level security;
 alter table public.sync_queue enable row level security;
 
-drop policy if exists "members can read their events" on public.events;
-create policy "members can read their events" on public.events
-for select to authenticated using (public.is_event_member(id));
+-- Event slug/name are non-sensitive routing metadata needed before sign-in.
+-- Operational records remain protected by membership and table-specific RLS.
+drop policy if exists "public can read event directory" on public.events;
+create policy "public can read event directory" on public.events
+for select to anon, authenticated using (true);
 
 drop policy if exists "members can read own memberships" on public.event_members;
 create policy "members can read own memberships" on public.event_members
@@ -166,7 +168,7 @@ for update to authenticated using (
 drop policy if exists "report viewers can read evaluations" on public.report_evaluations;
 create policy "report viewers can read evaluations" on public.report_evaluations
 for select to authenticated using (
-  exists (select 1 from public.reports r where r.id=report_id and r.event_id=event_id)
+  exists (select 1 from public.reports r where r.id=report_id and r.event_id=report_evaluations.event_id)
 );
 
 drop policy if exists "admins can write evaluations" on public.report_evaluations;
@@ -217,7 +219,8 @@ for all to authenticated using (user_id=auth.uid() and public.is_event_member(ev
 with check (user_id=auth.uid() and public.is_event_member(event_id));
 
 grant usage on schema public to authenticated;
-grant select on public.events, public.event_members to authenticated;
+grant select on public.events to anon, authenticated;
+grant select on public.event_members to authenticated;
 grant select,insert,update on public.reports to authenticated;
 grant select,insert,update,delete on public.report_evaluations to authenticated;
 grant select,insert,update on public.event_state to authenticated;
