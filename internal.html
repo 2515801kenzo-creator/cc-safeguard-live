@@ -92,7 +92,9 @@ async function enterPortal(authUser){
  const profile=await loadCloudProfile(authUser);
  user={id:authUser.id,email:authUser.email,role:profile.role,name:profile.display_name||authUser.email};
  $("loginError").hidden=true;
- audit("Login",user.name,"Masuk ke portal cloud");
+ await audit("Login",user.name);
+ await loadCloudReports();
+ subscribeRealtime();
  save();
  $("displayUser").textContent=user.name;$("displayRole").textContent=ROLE[user.role];$("avatar").textContent=ROLE[user.role][0];$("roleTitle").textContent=ROLE[user.role].toUpperCase();
  $("auditNav").hidden=user.role!=="admin";$("accountsNav").hidden=user.role!=="admin";
@@ -117,15 +119,41 @@ async function signIn(e){
  }finally{if(button){button.disabled=false;button.textContent="Masuk →";}}
 }
 async function logout(){
- try{audit("Logout",user?.name||"Pengguna","Keluar dari portal");save();await supabase.auth.signOut();}
+ try{await audit("Logout",user?.name||"Pengguna");save();if(realtimeChannel){await supabase.removeChannel(realtimeChannel);realtimeChannel=null;}await supabase.auth.signOut();}
  catch(err){toast("Gagal mengakhiri sesi cloud: "+(err.message||""));return;}
- user=null;show("login");$("loginForm").reset();
+ user=null;db.reports=[];show("login");$("loginForm").reset();
 }
 async function restoreSession(){
  try{
   const {data,error}=await supabase.auth.getSession();if(error)throw error;
   if(data.session?.user)await enterPortal(data.session.user);else show("login");
  }catch(err){show("login");showAuthError("Sesi tidak dapat dipulihkan: "+(err.message||"Periksa konfigurasi Supabase."));}
+}
+async function loadCloudReports(){
+ const {data,error}=await supabase.from("reports").select("*").order("created_at",{ascending:false});
+ if(error)throw new Error("Laporan cloud gagal dimuat: "+error.message);
+ db.reports=(data||[]).map(r=>({id:r.id,code:r.report_code,title:r.title,type:r.category,priority:r.priority,status:r.status,verification:r.verification,reporter:r.reporter_name,location:r.location||"",description:r.description,createdAt:r.created_at,assignee:r.assignee||"",handling:r.handling_notes||"",photos:[]}));
+ const ids=db.reports.map(r=>r.id);
+ if(ids.length){
+  const {data:photoRows,error:photoError}=await supabase.from("report_photos").select("*").in("report_id",ids);
+  if(photoError)console.warn("Photo metadata unavailable:",photoError.message);
+  else{
+   const signed=await Promise.all((photoRows||[]).map(async p=>{
+    const {data:signedData,error:signedError}=await supabase.storage.from(PHOTO_BUCKET).createSignedUrl(p.storage_path,3600);
+    return {...p,url:signedError?null:signedData?.signedUrl||null};
+   }));
+   for(const p of signed){const report=db.reports.find(r=>r.id===p.report_id);if(report)report.photos.push(p);}
+  }
+ }
+ render();
+}
+function subscribeRealtime(){
+ if(realtimeChannel)supabase.removeChannel(realtimeChannel);
+ realtimeChannel=supabase.channel("ccsg-live-"+user.id)
+  .on("postgres_changes",{event:"*",schema:"public",table:"reports"},()=>loadCloudReports().catch(e=>toast(e.message)))
+  .on("postgres_changes",{event:"*",schema:"public",table:"report_photos"},()=>loadCloudReports().catch(e=>toast(e.message)))
+  .on("postgres_changes",{event:"*",schema:"public",table:"activity_log"},()=>{if(user?.role==="admin"&&document.querySelector('[data-view="audit"].active'))renderAudit();})
+  .subscribe();
 }
 function visible(){return db.reports.filter(r=>user.role==="admin"||(user.role==="clinic"?r.type==="medical":r.type==="general"));}
 function sorted(a){return[...a].sort((x,y)=>(RANK[y.priority]||0)-(RANK[x.priority]||0)||new Date(y.createdAt)-new Date(x.createdAt));}
