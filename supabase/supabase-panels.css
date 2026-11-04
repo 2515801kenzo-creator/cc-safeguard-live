@@ -1,0 +1,18 @@
+/* Optional styling for the Supabase account and photo panels. */
+.ccsg-admin{display:grid;gap:14px;color:#1b3144}
+.ccsg-admin-head{display:flex;align-items:center;justify-content:space-between;gap:12px}
+.ccsg-admin h2{margin:0;font-size:20px}.ccsg-admin p{margin:4px 0;color:#718394;font-size:12px}
+.ccsg-admin button,.ccsg-photo-picker button{border:1px solid #d9e3e9;border-radius:8px;background:#fff;padding:8px 11px;font-weight:700;font-size:12px;cursor:pointer}
+.ccsg-create-user{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px;background:#f7fafb;border:1px solid #e4ebef;border-radius:12px;padding:15px}
+.ccsg-create-user label{display:grid;gap:5px;font-size:11px;font-weight:700}
+.ccsg-create-user input,.ccsg-create-user select{min-width:0;border:1px solid #dbe4e9;border-radius:8px;padding:10px;background:white}
+.ccsg-create-user button{background:#20c99a;border:0;color:#063d32;align-self:end}
+.ccsg-small{font-size:10px!important}
+.ccsg-notice{font-size:12px;color:#1a7c5d;min-height:18px}.ccsg-notice.error{color:#b3313f}
+.ccsg-table-wrap{overflow:auto}.ccsg-table-wrap table{border-collapse:collapse;width:100%;font-size:12px}
+.ccsg-table-wrap th,.ccsg-table-wrap td{padding:10px;border-bottom:1px solid #e8edf1;text-align:left;white-space:nowrap}
+.ccsg-status{font-size:10px;font-weight:800}.ccsg-status.active{color:#16865f}.ccsg-status.inactive{color:#b3313f}
+.ccsg-actions{display:flex;gap:5px}.ccsg-photo-picker{display:grid;gap:8px}.ccsg-photo-label{display:grid;gap:8px;font-size:12px;font-weight:800}.ccsg-photo-picker p{font-size:10px;color:#718394}
+.ccsg-photo-preview{display:flex;gap:10px;flex-wrap:wrap}.ccsg-photo-preview figure{width:125px;margin:0;border:1px solid #e4ebef;border-radius:9px;padding:7px}
+.ccsg-photo-preview img{width:100%;height:95px;object-fit:cover;border-radius:6px}.ccsg-photo-preview figcaption{font-size:9px;overflow-wrap:anywhere}.ccsg-photo-preview button{margin-top:4px}
+@media(max-width:600px){.ccsg-create-user{grid-template-columns:1fr}.ccsg-admin-head{align-items:flex-start;flex-direction:column}}
