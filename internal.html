@@ -27,8 +27,8 @@ button{border:0}.btn{border-radius:10px;padding:10px 15px;min-height:40px;font-s
  <div class="intro"><div class="school-event-lockup" aria-label="Identitas Kolese Kanisius dan CC Cup"><img class="login-school-logo" src="assets/kolese-kanisius-logo.svg" alt="Logo utama Kolese Kanisius"><span class="lockup-divider"></span><img class="login-cup-logo" src="assets/cc-cup-logo.svg" alt="Logo CC Cup XLI"><span class="lockup-copy"><b>KOLESE KANISIUS</b><small>CC CUP XLI • SAFE EVENT REPORTING</small></span></div><span class="eyebrow">CC CUP • INTERNAL OPERATIONS</span><h1>Satu pusat laporan.<br><span>Tindak lanjut yang jelas.</span></h1><p>Portal terpisah untuk Klinik/P4K, Panitia, dan Admin. Setiap peran memiliki tampilan dan kewenangan yang berbeda.</p>
   <div class="roles"><article><i class="role-icon">✚</i><div><b>Klinik / P3K</b><small>Laporan medis, prioritas, dan dokumentasi penanganan.</small></div></article><article><i class="role-icon">▤</i><div><b>Panitia</b><small>Insiden umum dan operasional kegiatan.</small></div></article><article><i class="role-icon">✓</i><div><b>Admin</b><small>Verifikasi, pemantauan, dan riwayat aktivitas.</small></div></article></div>
  </div>
- <form id="loginForm" class="card"><span class="eyebrow">AKSES INTERNAL</span><h2>Masuk ke portal</h2><p class="muted">Masukkan email dan kata sandi akun CC SafeGuard yang telah dibuat Admin.</p>
-  <label class="field"><span>Email akun</span><input name="email" type="email" required autocomplete="username" placeholder="nama@contoh.com"></label>
+ <form id="loginForm" class="card"><span class="eyebrow">AKSES INTERNAL</span><h2>Masuk ke portal</h2><p class="muted">Panitia/Klinik masuk dengan username. Admin masuk dengan email sekolah.</p>
+  <label class="field"><span>Username atau email Admin</span><input name="loginId" type="text" required autocomplete="username" placeholder="contoh: max atau email Admin"></label>
   <label class="field"><span>Kata sandi</span><input name="password" type="password" required autocomplete="current-password" placeholder="Masukkan kata sandi"></label>
   <p id="loginError" style="color:#b33b48;font-size:11px" hidden></p><button class="btn primary full">Masuk →</button>
   
@@ -44,7 +44,7 @@ button{border:0}.btn{border-radius:10px;padding:10px 15px;min-height:40px;font-s
   <section class="page" data-view="reports"><div class="heading"><div><span class="eyebrow">PENGELOLAAN</span><h1>Pusat laporan</h1><p id="reportSub">Daftar laporan sesuai akses pengguna.</p></div><div class="actions"><button class="btn secondary" id="exportReports">Ekspor CSV</button><button class="btn primary" data-goto="new">＋ Baru</button></div></div><section class="surface"><div class="filter"><input id="search" type="search" placeholder="Cari ID, pelapor, atau kejadian"><select id="filterStatus"><option value="">Semua status</option><option>Baru</option><option>Perlu verifikasi</option><option>Diverifikasi</option><option>Sedang ditangani</option><option>Selesai</option><option>Ditolak</option></select><select id="filterPriority"><option value="">Semua urgensi</option><option>Darurat</option><option>Tinggi</option><option>Sedang</option><option>Rendah</option></select></div><div id="allReports" class="list"></div></section></section>
   <section class="page" data-view="new"><div class="heading"><div><span class="eyebrow">FORMULIR TERPADU</span><h1>Buat laporan</h1><p>Tuliskan kronologi secara singkat, jelas, dan objektif.</p></div></div><section class="surface" id="privateForm"></section></section>
   <section class="page" data-view="audit"><div class="heading"><div><span class="eyebrow">TRANSPARANSI</span><h1>Riwayat aktivitas</h1><p>Riwayat tindakan dan perubahan dalam sistem.</p></div></div><section class="surface" id="auditList"></section></section>
-  <section class="page" data-view="accounts"><div class="heading"><div><span class="eyebrow">ADMINISTRASI</span><h1>Manajemen akun</h1><p>Buat dan kelola akun Panitia serta Klinik/P3K.</p></div></div><div class="notice"><b>Akun cloud:</b> akun disimpan di Supabase Auth dan profil peran di database. Buat akun Panitia/Klinik melalui Admin.</div><section class="surface"><h2>Buat akun baru</h2><form id="createAccountForm"><div class="formgrid"><label class="field"><span>Nama pengguna / nama lengkap *</span><input name="displayName" required maxlength="70" placeholder="Nama panitia atau petugas"></label><label class="field"><span>Email akun *</span><input name="email" type="email" required autocomplete="off" placeholder="petugas@contoh.com"></label><label class="field"><span>Peran *</span><select name="role"><option value="committee">Panitia</option><option value="clinic">Klinik / P3K</option></select></label><label class="field"><span>Password awal *</span><input name="password" type="password" required minlength="12" maxlength="128" autocomplete="new-password" placeholder="Minimal 12 karakter"></label></div><p class="hint">Gunakan password kuat minimal 12 karakter. Sampaikan secara pribadi kepada pemilik akun.</p><button class="btn primary">＋ Buat akun</button></form></section><section class="surface" style="margin-top:14px"><div class="itemtop"><h2>Daftar akun</h2><button class="btn secondary" id="refreshAccounts">Refresh</button></div><div id="accountsList" class="list"></div></section></section>
+  <section class="page" data-view="accounts"><div class="heading"><div><span class="eyebrow">ADMINISTRASI</span><h1>Manajemen akun</h1><p>Buat dan kelola akun Panitia serta Klinik/P3K.</p></div></div><div class="notice"><b>Akun cloud:</b> akun disimpan di Supabase Auth dan profil peran di database. Buat akun Panitia/Klinik melalui Admin.</div><section class="surface"><h2>Buat akun baru</h2><form id="createAccountForm"><div class="formgrid"><label class="field"><span>Nama profil *</span><input name="displayName" required maxlength="80" placeholder="Contoh: Max"></label><label class="field"><span>Username untuk login *</span><input name="username" required minlength="3" maxlength="24" pattern="[a-zA-Z0-9._-]+" autocomplete="off" placeholder="Contoh: max"></label><label class="field"><span>Peran *</span><select name="role"><option value="committee">Panitia</option><option value="clinic">Klinik / P3K</option></select></label><label class="field"><span>Password awal *</span><input name="password" type="password" required minlength="12" maxlength="128" autocomplete="new-password" placeholder="Minimal 12 karakter"></label></div><p class="hint">Panitia/Klinik tidak wajib memiliki Gmail. Gunakan username unik dan password berbeda yang kuat untuk setiap akun.</p><button class="btn primary">＋ Buat akun</button></form></section><section class="surface" style="margin-top:14px"><div class="itemtop"><h2>Daftar akun</h2><button class="btn secondary" id="refreshAccounts">Refresh</button></div><div id="accountsList" class="list"></div></section></section>
   <footer class="footer">CC SafeGuard • Pusat Laporan Internal • Gunakan sesuai prosedur dan kewenangan.</footer>
  </main></div>
 </section>
@@ -98,7 +98,7 @@ async function enterPortal(authUser){
 }
 async function signIn(e){
  e.preventDefault();
- const f=new FormData(e.target),email=String(f.get("email")||"").trim().toLowerCase(),password=String(f.get("password")||"");
+ const f=new FormData(e.target),loginId=String(f.get("loginId")||"").trim().toLowerCase(),email=loginId.includes("@")?loginId:loginId+"@accounts.ccsafeguard.local",password=String(f.get("password")||"");
  const button=e.submitter||e.target.querySelector('button[type="submit"],button:not([type])');
  if(button){button.disabled=true;button.textContent="Memeriksa...";}
  $("loginError").hidden=true;
@@ -212,38 +212,58 @@ async function renderAudit(){
 }
 function printCurrent(){let r=db.reports.find(x=>x.id===detailId);if(!r)return;$("printArea").innerHTML='<h1>CC SAFEGUARD — DOKUMEN LAPORAN</h1><p><b>ID:</b> '+esc(r.id)+' · <b>Tanggal:</b> '+esc(date(r.createdAt))+'</p><table><tr><th>Judul</th><td>'+esc(r.title)+'</td></tr><tr><th>Kategori</th><td>'+esc(r.type==="medical"?"Medis":"Umum")+'</td></tr><tr><th>Pelapor</th><td>'+esc(r.reporter)+'</td></tr><tr><th>Lokasi</th><td>'+esc(r.location)+'</td></tr><tr><th>Urgensi</th><td>'+esc(r.priority)+'</td></tr><tr><th>Status</th><td>'+esc(r.status)+'</td></tr><tr><th>Penanggung jawab</th><td>'+esc(r.assignee||"Belum ditentukan")+'</td></tr></table><h2>Kronologi</h2><p>'+esc(r.description)+'</p><h2>Penanganan</h2><p>'+esc(r.handling||"Belum ada catatan")+'</p><div class="sign"><div>Pelapor<br><br><br>(_________________)</div><div>Penanggung jawab<br><br><br>(_________________)</div></div><p>Dokumen pencatatan kegiatan. Ikuti prosedur resmi penanggung jawab untuk setiap kejadian.</p>';window.print();}
 
+async function accountAdminAction(payload){
+ const {data,error}=await supabase.functions.invoke("admin-manage-users",{body:payload});
+ if(error)throw error;
+ if(data?.error)throw new Error(data.error);
+ return data;
+}
 async function createAccount(form){
  if(user?.role!=="admin"){toast("Hanya Admin yang dapat membuat akun.");return;}
- const d=new FormData(form),displayName=String(d.get("displayName")||"").trim(),email=String(d.get("email")||"").trim().toLowerCase(),role=String(d.get("role")||""),password=String(d.get("password")||"");
- if(displayName.length<2||displayName.length>80||!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)||password.length<12||password.length>128||!["committee","clinic"].includes(role)){toast("Periksa nama, email, peran, dan password (minimal 12 karakter).");return;}
+ const d=new FormData(form),displayName=String(d.get("displayName")||"").trim(),username=String(d.get("username")||"").trim().toLowerCase(),role=String(d.get("role")||""),password=String(d.get("password")||"");
+ if(displayName.length<2||displayName.length>80||!/^[a-z0-9][a-z0-9._-]{2,23}$/.test(username)||password.length<12||password.length>128||!["committee","clinic"].includes(role)){toast("Periksa nama profil, username (3–24 karakter), peran, dan password (minimal 12 karakter).");return;}
  const button=form.querySelector('button[type="submit"],button:not([type])');if(button){button.disabled=true;button.textContent="Membuat akun...";}
  try{
-  const {data,error}=await supabase.functions.invoke("admin-create-user",{body:{email,password,display_name:displayName,role}});
-  if(error)throw error;
-  if(data?.error)throw new Error(data.error);
+  await accountAdminAction({action:"create",username,display_name:displayName,role,password});
   form.reset();await renderAccounts();
-  toast("Akun "+email+" berhasil dibuat di cloud.");
- }catch(err){
-  let details=null;try{if(err?.context?.json)details=await err.context.json();}catch(_){}
-  toast("Akun gagal dibuat: "+(details?.error||err.message||"Periksa Edge Function dan izin Admin."));
- }finally{if(button){button.disabled=false;button.textContent="＋ Buat akun";}}
+  toast("Akun @"+username+" berhasil dibuat dan tersimpan di cloud.");
+ }catch(err){toast("Akun gagal dibuat: "+(err.message||"Periksa koneksi dan izin Admin."));}
+ finally{if(button){button.disabled=false;button.textContent="＋ Buat akun";}}
 }
 async function renderAccounts(){
  if(user?.role!=="admin")return;
  const list=$("accountsList");if(!list)return;
  list.innerHTML='<div class="muted">Memuat akun cloud...</div>';
  try{
-  const {data,error}=await supabase.from("profiles").select("id,username,display_name,role,is_active,created_at").order("created_at",{ascending:false});
-  if(error)throw error;
-  cloudProfiles=data||[];
-  list.innerHTML=cloudProfiles.length?cloudProfiles.map(a=>'<article class="item"><div class="itemtop"><div><h3>'+esc(a.display_name)+'</h3><span class="meta">'+esc(a.username)+' · '+esc(ROLE[a.role]||a.role)+'</span></div><span class="tag '+(a.is_active?'selesai':'Ditolak')+'">'+(a.is_active?'Aktif':'Nonaktif')+'</span></div><div class="meta">Dibuat: '+esc(date(a.created_at))+'</div></article>').join(""):'<div class="empty">Belum ada profil akun.</div>';
+  const data=await accountAdminAction({action:"list"});
+  cloudProfiles=data.users||[];
+  list.innerHTML=cloudProfiles.length?cloudProfiles.map(a=>'<article class="item"><div class="itemtop"><div><h3>'+esc(a.display_name||a.username)+'</h3><span class="meta">@'+esc(a.username)+' · '+esc(ROLE[a.role]||a.role)+'</span></div><span class="tag '+(a.is_active?'selesai':'Ditolak')+'">'+(a.is_active?'Aktif':'Nonaktif')+'</span></div><div class="meta">Dibuat: '+esc(date(a.created_at))+'</div><div class="actions" style="margin-top:10px"><button class="btn secondary" data-account-toggle="'+esc(a.id)+'" data-active="'+(a.is_active?'true':'false')+'">'+(a.is_active?'Nonaktifkan':'Aktifkan')+'</button><button class="btn secondary" data-account-reset="'+esc(a.id)+'">Reset password</button><button class="btn danger" data-account-delete="'+esc(a.id)+'">Hapus akun</button></div></article>').join(""):'<div class="empty">Belum ada akun Panitia atau Klinik/P3K.</div>';
  }catch(err){list.innerHTML='<div class="empty">Daftar akun gagal dimuat: '+esc(err.message||"Kesalahan database")+'</div>';}
 }
-function events(){
+async function toggleCloudAccount(id,active){
+ try{await accountAdminAction({action:"set_active",user_id:id,is_active:active});await renderAccounts();toast(active?"Akun berhasil diaktifkan.":"Akun berhasil dinonaktifkan.");}
+ catch(err){toast("Status akun gagal diubah: "+(err.message||"Kesalahan server."));}
+}
+async function resetCloudAccountPassword(id){
+ const password=prompt("Masukkan password baru (minimal 12 karakter). Jangan gunakan password yang sama untuk semua akun:");
+ if(password===null)return;
+ if(password.length<12||password.length>128){toast("Password harus 12–128 karakter.");return;}
+ try{await accountAdminAction({action:"reset_password",user_id:id,password});toast("Password berhasil diperbarui.");}
+ catch(err){toast("Reset password gagal: "+(err.message||"Kesalahan server."));}
+}
+async function deleteCloudAccount(id){
+ const target=cloudProfiles.find(a=>a.id===id);if(!target)return;
+ if(!confirm("Hapus akun @"+target.username+" secara permanen? Jika akun sudah membuat laporan atau mengunggah foto, sistem akan menolak penghapusan agar riwayat tetap utuh."))return;
+ try{await accountAdminAction({action:"delete",user_id:id});await renderAccounts();toast("Akun berhasil dihapus.");}
+ catch(err){toast("Akun tidak dapat dihapus: "+(err.message||"Nonaktifkan akun jika riwayatnya harus dipertahankan."));}
+}function events(){
 $("loginForm").addEventListener("submit",signIn);$("logout").addEventListener("click",logout);
 $("createAccountForm").addEventListener("submit",e=>{e.preventDefault();createAccount(e.currentTarget);});$("refreshAccounts").addEventListener("click",()=>renderAccounts());
 
 document.addEventListener("click",e=>{let n=e.target.closest("[data-page]");if(n)go(n.dataset.page);
+let accountToggle=e.target.closest("[data-account-toggle]");if(accountToggle)toggleCloudAccount(accountToggle.dataset.accountToggle,accountToggle.dataset.active!=="true");
+let accountReset=e.target.closest("[data-account-reset]");if(accountReset)resetCloudAccountPassword(accountReset.dataset.accountReset);
+let accountDelete=e.target.closest("[data-account-delete]");if(accountDelete)deleteCloudAccount(accountDelete.dataset.accountDelete);
 let g=e.target.closest("[data-goto]");if(g)go(g.dataset.goto);let o=e.target.closest("[data-open]");if(o)openDetail(o.dataset.open);if(e.target.id==="closeDetail"||e.target.id==="detailModal")$("detailModal").hidden=true;
 let v=e.target.closest("[data-verify]");if(v)mutate("Verifikasi laporan",r=>{r.verification=v.dataset.verify;r.status=v.dataset.verify==="Terverifikasi"?"Diverifikasi":v.dataset.verify==="Ditolak"?"Ditolak":"Perlu verifikasi";});
 let ed=e.target.closest("[data-edit]");if(ed){let title=$("editTitle").value.trim(),desc=$("editDesc").value.trim();if(!title||!desc){toast("Judul dan deskripsi wajib diisi.");return;}mutate("Edit laporan",r=>{r.title=title;r.description=desc;});}
