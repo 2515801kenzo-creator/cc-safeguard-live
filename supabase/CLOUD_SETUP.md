@@ -13,7 +13,7 @@ Project reference: `vhovzyzktrzenuulznzv`
   - `20261104153156_fix_private_report_photo_bucket`
   - `20261104153439_restrict_legacy_activity_rpc`
 - Edge Function `admin-manage-users` is deployed, requires JWT verification, and supports username-based staff account creation, listing, activation/deactivation, password reset, and guarded permanent deletion.
-- The updated frontend is on branch `cloud-backend-foundation` and in draft PR #2. It is not yet the default-branch/live-site update.
+- The per-account cloud workspace frontend is committed to `main`; public GitHub Pages deployment still needs to be verified.
 
 ## How staff accounts work
 
@@ -82,3 +82,21 @@ The Storage object policies for `CC-report-photo` have now been added and verifi
 - Only Admin can delete objects in this bucket.
 
 The migration is recorded as `20261105160000_fix_cc_safeguard_photo_bucket_policies` and has already been applied to the connected Supabase project. Do not run it again manually.
+
+
+## Per-account cloud workspaces (2026-11-05)
+
+The selected model is **private staff workspace + shared Admin oversight**. This is implemented in the existing Supabase project; it does not create a separate Supabase project or bucket per person.
+
+- Every report stores its owner in `reports.created_by`.
+- Admin can read all reports across both categories.
+- Panitia can read and update only its own general reports.
+- Klinik/P3K can read and update only its own medical reports.
+- Photo metadata and private Storage object access reuse `can_access_report(category, created_by)`, so a staff account can access only photos attached to its own reports; Admin can access all report photos.
+- Staff login credentials remain managed by Supabase Auth. Passwords are never stored in `profiles`.
+- Account profile information remains in `public.profiles`; report content in `public.reports`; photo files in private Storage bucket `CC-report-photo`; photo metadata in `public.report_photos`.
+- Realtime subscriptions refresh reports and photo metadata on other signed-in devices, subject to the same row-level access policies.
+
+Migration: `20261105210000_private_staff_report_workspaces.sql`. It was applied to the connected Supabase project and committed to `main`.
+
+The current project has only the original Admin profile and no report/photo records yet. Do not consider cross-device synchronization proven until fictional Panitia and Klinik test accounts each create a report with a photo and verify access from a second device. Admin should then confirm both test reports appear in the shared Admin view. Staff accounts must be created through the Admin interface after the Admin login is working.
