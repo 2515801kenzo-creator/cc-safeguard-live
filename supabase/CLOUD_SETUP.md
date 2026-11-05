@@ -65,3 +65,20 @@ Permanent deletion is intentionally refused when an account owns reports or uplo
 ## Safety and privacy
 
 Use fictional data while testing. Real event or medical use requires approval from the school/event owner and an authorized adult IT administrator, a privacy notice, limited staff access, and clear retention/deletion rules. Do not enter real student or medical information during testing.
+
+
+## Photo bucket policy correction (2026-11-05)
+
+The website uses the private bucket `CC-report-photo`. This bucket was verified to exist with:
+- Public access: disabled
+- Maximum file size: 5 MiB
+- Allowed types: JPEG, PNG, WebP
+
+A separate legacy bucket `ccsg-report-photos` also exists. It is not used by the current website; leave it untouched for now.
+
+The Storage object policies for `CC-report-photo` have now been added and verified:
+- Authenticated users can upload only to a report they own (Admin may upload for accessible reports).
+- Users can read photos only when they can access the related report.
+- Only Admin can delete objects in this bucket.
+
+The migration is recorded as `20261105160000_fix_cc_safeguard_photo_bucket_policies` and has already been applied to the connected Supabase project. Do not run it again manually.
