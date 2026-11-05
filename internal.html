@@ -144,7 +144,7 @@ async function loadCloudReports(){
 function subscribeRealtime(){
  if(realtimeChannel)supabase.removeChannel(realtimeChannel);
  realtimeChannel=supabase.channel("ccsg-live-"+user.id)
-  .on("postgres_changes",{event:"*",schema:"public",table:"reports"},()=>loadCloudReports().catch(e=>toast(e.message)))
+  .on("postgres_changes",{event:"*",schema:"public",table:"reports"},payload=>{loadCloudReports().then(()=>{if(user?.role==="clinic"&&payload.new?.needs_clinic===true&&payload.new?.clinic_call_status==="requested")toast("Panggilan P3K baru masuk. Periksa Pusat laporan.");}).catch(e=>toast(e.message));})
   .on("postgres_changes",{event:"*",schema:"public",table:"report_photos"},()=>loadCloudReports().catch(e=>toast(e.message)))
   .on("postgres_changes",{event:"*",schema:"public",table:"activity_log"},()=>{if(user?.role==="admin"&&document.querySelector('[data-view="audit"].active'))renderAudit();})
   .subscribe();
