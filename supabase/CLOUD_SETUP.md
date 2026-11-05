@@ -1,79 +1,67 @@
-# CC SafeGuard Live — Supabase cloud integration
+# CC SafeGuard Live — Supabase setup
 
 Project reference: `vhovzyzktrzenuulznzv`
 
-This branch is aligned with the existing Supabase schema. These migrations have been applied to the project:
-- `20261104151817_existing_schema_cloud_integration.sql`
-- `20261104152138_allow_evidence_upload_for_accessible_reports.sql`
+## Current project status
 
-## Current cloud features
+- The first Admin Auth user and matching `public.profiles` row have already been created and verified.
+- Do not run the old first-Admin SQL insert again. It would produce a duplicate primary-key error.
+- Existing schema migrations are already applied:
+  - `20261104151817_existing_schema_cloud_integration`
+  - `20261104152138_allow_evidence_upload_for_accessible_reports`
+  - `20261104153101_admin_activity_log_expand`
+  - `20261104153156_fix_private_report_photo_bucket`
+  - `20261104153439_restrict_legacy_activity_rpc`
+- Edge Function `admin-manage-users` is deployed, requires JWT verification, and supports username-based staff account creation, listing, activation/deactivation, password reset, and guarded permanent deletion.
+- The updated frontend is on branch `cloud-backend-foundation` and in draft PR #2. It is not yet the default-branch/live-site update.
 
-- Supabase Auth login and role lookup through `profiles`.
-- Admin-only Edge Function `admin-create-user` for creating Clinic/P3K and Committee accounts.
-- Shared report reads and writes through `public.reports`.
-- Private photo storage in bucket `CC-report-photo`, with metadata in `public.report_photos`.
-- Admin activity history in `public.activity_log`.
-- Realtime subscriptions for reports, photo metadata, and activity history.
-- Role restrictions: Admin sees all reports; Clinic sees medical reports; Committee sees general reports created by that account.
+## How staff accounts work
 
-## Important first step: provision the first Admin
+Admin accounts continue to sign in with their school email. Panitia and Klinik/P3K accounts can be created with a username and do not need Gmail.
 
-The project currently has no Auth users and no profiles. Therefore nobody can log in or create staff accounts yet.
+When Admin creates a staff account:
+- `display_name` is the name shown in the profile (for example, Max).
+- `username` is the staff login ID (for example, max).
+- The Edge Function creates a Supabase Auth identity using the internal address `username@accounts.ccsafeguard.local`; this is not a real mailbox and is not used to receive email.
+- The role is restricted to `committee` or `clinic`; the public form cannot create another Admin.
+- The profile is stored in `public.profiles`; password credentials are managed by Supabase Auth and are never stored in the profile table.
 
-1. In Supabase Dashboard → Authentication → Users, create the first Admin user with an email and a strong temporary password.
-2. Copy the Auth user's UUID.
-3. In SQL Editor, insert the matching profile (replace the example values):
+Each account must have its own strong password (minimum 12 characters). Do not reuse one shared password.
 
-```sql
-insert into public.profiles (id, username, display_name, role, is_active)
-values (
-  'AUTH-USER-UUID',
-  'admin@example.org',
-  'CC SafeGuard Administrator',
-  'admin',
-  true
-);
-```
+## Supabase Dashboard checklist (no SQL required)
 
-4. Sign in to the portal with that email and password.
-5. Change the temporary password through the approved account-management process before operational use.
+1. Open the existing Supabase project.
+2. Go to **Authentication → Users** and confirm the first Admin user exists.
+3. Go to **Edge Functions** and confirm `admin-manage-users` is **ACTIVE**, version 2, with JWT verification enabled.
+4. Go to **Storage → Buckets** and confirm `CC-report-photo` exists and remains **private**.
+5. Do not make database tables or the photo bucket public. Keep Row Level Security enabled.
+6. Do not paste the service-role key into the website, GitHub, or chat. Edge Functions use server-side credentials only. If the function reports missing server configuration, check the project's Edge Function secrets in the Dashboard; do not expose secret values.
 
-Do not allow users to select the Admin role in the account form. The Edge Function only creates `committee` and `clinic` accounts.
+No additional SQL is needed for the first Admin or for staff account creation. Admin creates staff accounts through the website; the Edge Function writes to Supabase Auth and Profiles.
 
-## Account creation
+## Website rollout and test
 
-The deployed Edge Function is `admin-create-user` and requires a valid signed-in user JWT.
-It checks the caller's active Admin profile before creating an Auth user and a profile row.
-The profile uses the existing schema columns `username`, `display_name`, `role`, `is_active`,
-and `created_by`.
+Before merging PR #2 into `main`, test the branch build with fictional accounts only:
 
-The app has no hard-coded 150-account ceiling. The actual number of accounts and active logins
-is still subject to the Supabase project's Auth and subscription quotas. This organization is
-currently on the Free plan; check current Dashboard usage and limits before adding many users.
+1. Sign in as the existing Admin (school email).
+2. Open **Manajemen akun**.
+3. Create a fictional Panitia account, e.g. display name `Max`, username `max`, and a unique strong password.
+4. Create a fictional Klinik/P3K account with a different username and unique password.
+5. Sign out, then sign in as `max` using the username and its password. Confirm the profile shows `Max` and role `Panitia`.
+6. Sign in as the test Klinik account and confirm its profile/role is Klinik/P3K.
+7. From a second device, sign in with the same test account and confirm the same cloud data is available.
+8. Test deactivate/reactivate and password reset. Test permanent deletion only on a test account with no reports or uploaded photos.
+
+Permanent deletion is intentionally refused when an account owns reports or uploaded evidence, so historical records keep their attribution. Deactivate such accounts instead.
 
 ## Reports and photo evidence
 
-- Reports are stored in `public.reports`; they are no longer treated as browser-local data.
-- Staff can attach JPG, PNG, or WebP photos from a device or use the camera input on supported phones.
-- Each photo is limited to 5 MB and stored privately in `CC-report-photo`.
-- Photo metadata is stored in `public.report_photos`.
+- Reports are stored in `public.reports`.
+- Photo files are stored in private bucket `CC-report-photo`; metadata is stored in `public.report_photos`.
+- JPG, PNG, or WebP files are limited to 5 MB each.
 - The app creates short-lived signed URLs only for users allowed to view the associated report.
-- Changes are refreshed through Supabase Realtime.
+- Report, photo metadata, and activity updates use Supabase Realtime.
 
-## Activity history
+## Safety and privacy
 
-Report inserts and updates are recorded by the database trigger in `public.activity_log`.
-Login/logout and other user actions are recorded through the authenticated
-`public.record_activity` RPC. The account-creation Edge Function records account creation.
-Only Admin profiles can read the activity history.
-
-## Security and testing
-
-- Keep Row Level Security enabled on every exposed table.
-- Never put the Supabase service-role key or database password in browser code, GitHub, or chat.
-- The report-photo bucket must remain private.
-- Test with fictional data and separate test accounts for Admin, Clinic/P3K, and Committee.
-- Verify that Clinic cannot read general reports, Committee cannot read medical reports or other Committee users' reports, and signed-out users cannot access reports or photos.
-- Verify that one device's changes appear on another authorized device.
-- Review Supabase Security Advisor findings before any real deployment.
-- Real event or medical use requires approval from the school/event owner and an authorized adult IT administrator, a privacy notice, limited staff access, and retention/deletion rules. Do not enter real student or medical information during testing.
+Use fictional data while testing. Real event or medical use requires approval from the school/event owner and an authorized adult IT administrator, a privacy notice, limited staff access, and clear retention/deletion rules. Do not enter real student or medical information during testing.
