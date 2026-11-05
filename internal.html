@@ -163,19 +163,20 @@ async function submitReport(form){
  if(!title||!reporter||!desc){toast("Lengkapi semua kolom wajib.");return;}
  if(files.some(file=>!["image/jpeg","image/png","image/webp"].includes(file.type)||file.size<1||file.size>5242880)){toast("Foto harus JPG, PNG, atau WebP dan maksimal 5 MB per file.");return;}
  if(!user?.id){toast("Sesi login tidak ditemukan. Silakan masuk kembali.");return;}
- const payload={report_code:id(),category:type,title,priority:String(d.get("priority")||"Sedang"),status:"Perlu verifikasi",verification:"Menunggu",reporter_name:reporter,location:String(d.get("location")||"Tidak dicantumkan").trim(),description:desc,assignee:"",handling_notes:"",created_by:user.id};
+ const reportId=crypto.randomUUID();
+ const payload={id:reportId,report_code:id(),category:type,title,priority:String(d.get("priority")||"Sedang"),status:"Perlu verifikasi",verification:"Menunggu",reporter_name:reporter,location:String(d.get("location")||"Tidak dicantumkan").trim(),description:desc,assignee:"",handling_notes:"",created_by:user.id};
  const submitButton=form.querySelector('button[type="submit"],button:not([type])');
  if(submitButton){submitButton.disabled=true;submitButton.textContent="Menyimpan ke cloud...";}
  try{
-  const {data:created,error}=await supabase.from("reports").insert(payload).select("*").single();
+  const {error}=await supabase.from("reports").insert(payload);
   if(error)throw error;
   let photoFailure="";
   for(let i=0;i<files.length;i++){
    const file=files[i],safeName=file.name.replace(/[^a-zA-Z0-9._-]+/g,"_").slice(0,80)||"photo";
-   const path=created.id+"/"+Date.now()+"-"+i+"-"+safeName;
+   const path=reportId+"/"+Date.now()+"-"+i+"-"+safeName;
    const {error:uploadError}=await supabase.storage.from(PHOTO_BUCKET).upload(path,file,{contentType:file.type,upsert:false});
    if(uploadError){photoFailure=uploadError.message;break;}
-   const {error:metaError}=await supabase.from("report_photos").insert({report_id:created.id,storage_path:path,file_name:file.name,content_type:file.type,size_bytes:file.size,uploaded_by:user.id});
+   const {error:metaError}=await supabase.from("report_photos").insert({report_id:reportId,storage_path:path,file_name:file.name,content_type:file.type,size_bytes:file.size,uploaded_by:user.id});
    if(metaError){await supabase.storage.from(PHOTO_BUCKET).remove([path]);photoFailure=metaError.message;break;}
   }
   form.reset();await loadCloudReports();go("reports");
