@@ -262,7 +262,14 @@ function renderList(){
 function go(page){
  const adminAccess=String(user?.role||"").trim().toLowerCase()==="admin";
  if((page==="audit"||page==="accounts")&&!adminAccess){toast("Menu ini hanya dapat dibuka oleh Admin.");return;}
- document.querySelectorAll(".page").forEach(x=>x.classList.toggle("active",x.dataset.view===page));
+ const target=Array.from(document.querySelectorAll(".page")).find(x=>x.dataset.view===page);
+ if(!target){toast("Halaman tidak ditemukan: "+page);return;}
+ document.querySelectorAll(".page").forEach(x=>{
+  const selected=x===target;
+  x.classList.toggle("active",selected);
+  x.style.display=selected?"block":"none";
+  x.setAttribute("aria-hidden",String(!selected));
+ });
  document.querySelectorAll(".nav button").forEach(x=>x.classList.toggle("active",x.dataset.page===page));
  if(page==="reports")renderList();
  if(page==="audit")renderAudit();
@@ -380,16 +387,41 @@ async function mutate(action,fn){
 }
 function csv(rows,headers,map,file){let q=x=>'"'+String(x??"").replace(/"/g,'""')+'"';let data=[headers.map(q).join(","),...rows.map(x=>map(x).map(q).join(","))].join("\r\n");let blob=new Blob(["\ufeff"+data],{type:"text/csv;charset=utf-8"}),url=URL.createObjectURL(blob),a=document.createElement("a");a.href=url;a.download=file;a.click();URL.revokeObjectURL(url);}
 async function renderAudit(){
- const list=$("auditList");list.innerHTML='<div class="muted">Memuat riwayat dari cloud...</div>';
+ const list=$("auditList");
+ if(!list)return;
+ list.style.display="block";
+ list.setAttribute("aria-live","polite");
+ list.innerHTML='<div class="muted">Memuat riwayat dari cloud...</div>';
+ if(user?.role!=="admin"){
+  list.innerHTML='<div class="empty">Riwayat aktivitas hanya dapat dibuka oleh Admin.</div>';
+  return;
+ }
  try{
-  const {data,error}=await supabase.from("activity_log").select("id,actor_id,action,report_id,report_code,category,created_at").order("created_at",{ascending:false}).limit(150);
+  const {data,error}=await supabase.from("activity_log")
+   .select("id,actor_id,actor_name,action,report_id,report_code,category,result,details,target_username,created_at")
+   .order("created_at",{ascending:false}).limit(150);
   if(error)throw error;
-  const actorIds=[...new Set((data||[]).map(a=>a.actor_id).filter(Boolean))];
+  const entries=data||[];
+  const actorIds=[...new Set(entries.map(a=>a.actor_id).filter(Boolean))];
   let profiles=[];
-  if(actorIds.length){const p=await supabase.from("profiles").select("id,display_name,role").in("id",actorIds);if(!p.error)profiles=p.data||[];}
+  if(actorIds.length){
+   const p=await supabase.from("profiles").select("id,display_name,role").in("id",actorIds);
+   if(!p.error)profiles=p.data||[];
+   else console.warn("Activity profile lookup failed:",p.error.message);
+  }
   const byId=new Map(profiles.map(p=>[p.id,p]));
-  list.innerHTML=(data||[]).map(a=>{const actor=byId.get(a.actor_id);return '<div class="audititem"><b>'+esc(a.action)+' · '+esc(a.report_code||a.report_id||"-")+'</b><small>'+esc(actor?.display_name||"Pengguna tidak diketahui")+' ('+esc(ROLE[actor?.role]||actor?.role||"akun")+') · '+esc(date(a.created_at))+(a.category?' · '+esc(a.category):"")+'</small></div>';}).join("")||'<div class="empty">Belum ada aktivitas.</div>';
- }catch(err){list.innerHTML='<div class="empty">Riwayat gagal dimuat: '+esc(err.message||"Kesalahan database")+'</div>';}
+  list.innerHTML=entries.map(a=>{
+   const actor=byId.get(a.actor_id);
+   const actorName=actor?.display_name||a.actor_name||"Pengguna tidak diketahui";
+   const actorRole=actor?.role?(" ("+(ROLE[actor.role]||actor.role)+")"):"";
+   const reference=a.report_code||a.report_id||a.target_username||"-";
+   const outcome=a.result==="failed"?" · Gagal":"";
+   const details=a.details?'<small>'+esc(a.details)+'</small>':"";
+   return '<div class="audititem"><b>'+esc(a.action||"Aktivitas")+outcome+' · '+esc(reference)+'</b><small>'+esc(actorName+actorRole)+' · '+esc(date(a.created_at))+(a.category?' · '+esc(a.category):"")+'</small>'+details+'</div>';
+  }).join("")||'<div class="empty">Belum ada aktivitas.</div>';
+ }catch(err){
+  list.innerHTML='<div class="empty">Riwayat gagal dimuat: '+esc(err.message||"Kesalahan database")+'</div>';
+ }
 }
 function printCurrent(){let r=db.reports.find(x=>x.id===detailId);if(!r)return;$("printArea").innerHTML='<h1>CC SAFEGUARD — DOKUMEN LAPORAN</h1><p><b>ID:</b> '+esc(r.id)+' · <b>Tanggal:</b> '+esc(date(r.createdAt))+'</p><table><tr><th>Judul</th><td>'+esc(r.title)+'</td></tr><tr><th>Kategori</th><td>'+esc(r.type==="medical"?"Medis":"Umum")+'</td></tr><tr><th>Pelapor</th><td>'+esc(r.reporter)+'</td></tr><tr><th>Lokasi</th><td>'+esc(r.location)+'</td></tr><tr><th>Urgensi</th><td>'+esc(r.priority)+'</td></tr><tr><th>Status</th><td>'+esc(r.status)+'</td></tr><tr><th>Penanggung jawab</th><td>'+esc(r.assignee||"Belum ditentukan")+'</td></tr></table><h2>Kronologi</h2><p>'+esc(r.description)+'</p><h2>Penanganan</h2><p>'+esc(r.handling||"Belum ada catatan")+'</p><div class="sign"><div>Pelapor<br><br><br>(_________________)</div><div>Penanggung jawab<br><br><br>(_________________)</div></div><p>Dokumen pencatatan kegiatan. Ikuti prosedur resmi penanggung jawab untuk setiap kejadian.</p>';window.print();}
 
@@ -412,14 +444,27 @@ async function createAccount(form){
  finally{if(button){button.disabled=false;button.textContent="＋ Buat akun";}}
 }
 async function renderAccounts(){
- if(user?.role!=="admin")return;
- const list=$("accountsList");if(!list)return;
- list.innerHTML='<div class="muted">Memuat akun cloud...</div>';
+ const list=$("accountsList");
+ if(!list)return;
+ list.style.display="grid";
+ list.setAttribute("aria-live","polite");
+ if(user?.role!=="admin"){
+  list.innerHTML='<div class="empty">Daftar akun hanya dapat dibuka oleh Admin.</div>';
+  return;
+ }
+ list.innerHTML='<div class="muted">Memuat akun dari database cloud...</div>';
  try{
-  const data=await accountAdminAction({action:"list"});
-  cloudProfiles=data.users||[];
+  /* Admin already has a dedicated RLS SELECT policy on profiles.
+     Read the roster directly so the list does not depend on an Edge Function round trip. */
+  const {data,error}=await supabase.from("profiles")
+   .select("id,username,display_name,role,is_active,created_at")
+   .in("role",["committee","clinic"]).order("created_at",{ascending:false});
+  if(error)throw error;
+  cloudProfiles=data||[];
   list.innerHTML=cloudProfiles.length?cloudProfiles.map(a=>'<article class="item"><div class="itemtop"><div><h3>'+esc(a.display_name||a.username)+'</h3><span class="meta">@'+esc(a.username)+' · '+esc(ROLE[a.role]||a.role)+'</span></div><span class="tag '+(a.is_active?'selesai':'Ditolak')+'">'+(a.is_active?'Aktif':'Nonaktif')+'</span></div><div class="meta">Dibuat: '+esc(date(a.created_at))+'</div><div class="actions" style="margin-top:10px"><button class="btn secondary" data-account-toggle="'+esc(a.id)+'" data-active="'+(a.is_active?'true':'false')+'">'+(a.is_active?'Nonaktifkan':'Aktifkan')+'</button><button class="btn secondary" data-account-reset="'+esc(a.id)+'">Reset password</button><button class="btn danger" data-account-delete="'+esc(a.id)+'">Hapus akun</button></div></article>').join(""):'<div class="empty">Belum ada akun Panitia atau Klinik/P3K.</div>';
- }catch(err){list.innerHTML='<div class="empty">Daftar akun gagal dimuat: '+esc(err.message||"Kesalahan database")+'</div>';}
+ }catch(err){
+  list.innerHTML='<div class="empty">Daftar akun gagal dimuat: '+esc(err.message||"Kesalahan database")+'</div>';
+ }
 }
 async function toggleCloudAccount(id,active){
  try{await accountAdminAction({action:"set_active",user_id:id,is_active:active});await renderAccounts();toast(active?"Akun berhasil diaktifkan.":"Akun berhasil dinonaktifkan.");}
