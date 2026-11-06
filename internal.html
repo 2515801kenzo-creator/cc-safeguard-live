@@ -62,6 +62,8 @@ const ROLE={clinic:"Klinik / P3K",committee:"Panitia",admin:"Admin"};
 const RANK={Darurat:4,Tinggi:3,Sedang:2,Rendah:1};
 let db={reports:[],evaluations:[],audit:[]},user=null,detailId=null,cloudProfiles=[],clinicRoster=[],realtimeChannel=null;
 const PHOTO_BUCKET="CC-report-photo";
+const PUSH_VAPID_PUBLIC_KEY=""; // Diisi setelah kunci publik Web Push dibuat.
+let pushReady=false;
 const $=id=>document.getElementById(id);
 const esc=s=>String(s??"").replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
 const now=()=>new Date().toISOString();
@@ -70,8 +72,41 @@ const id=()=> "CC-"+Date.now().toString(36).toUpperCase()+"-"+Math.random().toSt
 function save(){return true;}
 function toast(s){$("toast").textContent=s;$("toast").hidden=false;clearTimeout(toast.timer);toast.timer=setTimeout(()=>$("toast").hidden=true,3500);}
 async function registerAppServiceWorker(){if(!("serviceWorker" in navigator))return null;try{return await navigator.serviceWorker.register("./sw.js",{scope:"./"});}catch(err){console.warn("Service Worker unavailable:",err);return null;}}
-async function showSystemNotification(title,body,tag){if(!("Notification" in window)||Notification.permission!=="granted")return;try{const registration=await navigator.serviceWorker.ready;await registration.showNotification(title,{body,icon:"./assets/safeguard-icon.svg",badge:"./assets/safeguard-icon.svg",tag,silent:true,renotify:false,data:{url:"./internal.html"}});}catch(err){console.warn("System notification failed:",err);}}
-function deliverPortalNotification(title,body,tag){if("Notification" in window&&Notification.permission==="granted"){void showSystemNotification(title,body,tag);}else{toast(title+". "+body);}}
+async function showSystemNotification(title,body,tag){if(!("Notification" in window)||Notification.permission!=="granted")return;try{const registration=await navigator.serviceWorker.ready;await registration.showNotification(title,{body,icon:"./assets/safeguard-icon.svg",badge:"./assets/safeguard-icon.svg",tag,silent:false,vibrate:[160,90,160],renotify:false,data:{url:"./internal.html"}});}catch(err){console.warn("System notification failed:",err);}}
+function deliverPortalNotification(title,body,tag){if(pushReady)return;if("Notification" in window&&Notification.permission==="granted"){void showSystemNotification(title,body,tag);}else{toast(title+". "+body);}}
+function pushApplicationServerKey(value){const padding="=".repeat((4-value.length%4)%4),base64=(value+padding).replace(/-/g,"+").replace(/_/g,"/"),raw=atob(base64);return Uint8Array.from(raw,c=>c.charCodeAt(0));}
+async function beginPushSubscriptionFromLogin(){
+ if(!PUSH_VAPID_PUBLIC_KEY)return null;
+ if(!("serviceWorker" in navigator)||!("PushManager" in window)||!("Notification" in window))return {pushError:"Browser tidak mendukung Web Push."};
+ try{
+  let permission=Notification.permission;
+  if(permission==="default")permission=await Notification.requestPermission();
+  if(permission!=="granted")return {pushError:"Izin notifikasi belum diberikan."};
+  const registration=await navigator.serviceWorker.ready;
+  let subscription=await registration.pushManager.getSubscription();
+  if(!subscription)subscription=await registration.pushManager.subscribe({userVisibleOnly:true,applicationServerKey:pushApplicationServerKey(PUSH_VAPID_PUBLIC_KEY)});
+  return subscription.toJSON();
+ }catch(error){console.warn("Web Push registration failed:",error);return {pushError:error?.message||"Pendaftaran perangkat gagal."};}
+}
+async function savePushSubscription(subscription,showError=false){
+ if(!user?.id||!subscription?.endpoint||!subscription?.keys?.p256dh||!subscription?.keys?.auth)return false;
+ const {error}=await supabase.from("push_subscriptions").upsert({
+  user_id:user.id,endpoint:subscription.endpoint,p256dh:subscription.keys.p256dh,
+  auth:subscription.keys.auth,user_agent:navigator.userAgent,is_active:true,updated_at:now()
+ },{onConflict:"endpoint"});
+ if(error){pushReady=false;console.warn("Push subscription storage failed:",error);if(showError)toast("Login berhasil, tetapi pendaftaran notifikasi gagal. "+error.message);return false;}
+ pushReady=true;return true;
+}
+async function syncExistingPushSubscription(){
+ if(!PUSH_VAPID_PUBLIC_KEY||!("serviceWorker" in navigator)||!("PushManager" in window)||!("Notification" in window)||Notification.permission!=="granted")return;
+ try{const registration=await navigator.serviceWorker.ready;const subscription=await registration.pushManager.getSubscription();if(subscription)await savePushSubscription(subscription.toJSON(),false);}
+ catch(error){console.warn("Could not sync existing push subscription:",error);}
+}
+async function removeCurrentPushSubscription(){
+ if(!user?.id||!("serviceWorker" in navigator)||!("PushManager" in window))return;
+ try{const registration=await navigator.serviceWorker.ready;const subscription=await registration.pushManager.getSubscription();if(subscription)await supabase.from("push_subscriptions").delete().eq("user_id",user.id).eq("endpoint",subscription.endpoint);}
+ catch(error){console.warn("Could not detach push subscription on logout:",error);}
+}
 function handleReportNotification(payload){if(!user)return;const n=payload?.new||{},o=payload?.old||{},event=payload?.eventType||payload?.event||"",prior=db.reports.find(r=>r.id===n.id),priorStatus=prior?.clinicCallStatus??o.clinic_call_status,priorNeeds=prior?.needsClinic??o.needs_clinic;if(event==="INSERT"&&n.created_by!==user.id){if(n.category==="medical"&&(user.role==="clinic"||user.role==="admin"))deliverPortalNotification("Laporan medis baru","Ada laporan medis baru. Buka portal untuk meninjau sesuai kewenangan.","medical-"+n.id);else if(n.category==="general"&&(user.role==="committee"||user.role==="admin"))deliverPortalNotification("Laporan umum baru","Ada laporan umum baru. Buka portal untuk meninjau.","general-"+n.id);if(n.category==="general"&&n.needs_clinic===true&&user.role==="clinic")deliverPortalNotification("Panggilan P3K baru","Ada permintaan bantuan P3K. Buka portal untuk menerima panggilan.","clinic-call-"+n.id);}if(event==="UPDATE"&&n.category==="general"&&n.needs_clinic===true&&n.clinic_call_status==="requested"&&(!priorNeeds||priorStatus!=="requested")&&user.role==="clinic")deliverPortalNotification("Panggilan P3K baru","Ada permintaan bantuan P3K. Buka portal untuk menerima panggilan.","clinic-call-"+n.id);if(event==="UPDATE"&&n.category==="general"&&n.needs_clinic===true&&priorStatus!==n.clinic_call_status&&(user.role==="committee"||user.role==="admin")&&n.clinic_assigned_to!==user.id)deliverPortalNotification("Pembaruan petugas P3K","Status respons petugas P3K telah diperbarui. Buka Ringkasan atau detail laporan.","clinic-update-"+n.id);}
 function audit(action,target,detail=""){if(!user)return Promise.resolve();return supabase.rpc("record_activity",{p_action:action,p_report_code:String(target||""),p_category:null}).then(({error})=>{if(error)console.warn("Activity log failed:",error.message);});}
 function show(which){["login","app"].forEach(x=>$(x).hidden=x!==which);}
@@ -92,6 +127,7 @@ async function enterPortal(authUser){
  await audit("Login",user.name);
  await loadCloudReports();
  await loadClinicRoster();
+ await syncExistingPushSubscription();
  
  subscribeRealtime();
  save();
@@ -103,10 +139,8 @@ async function enterPortal(authUser){
 }
 async function signIn(e){
  e.preventDefault();
- /* Ask once when Login is pressed; later report alerts are automatic. */
- if("Notification" in window&&Notification.permission==="default"){
-  try{void Notification.requestPermission().catch(()=>{});}catch(_){}
- }
+ /* Start device subscription from the Login gesture; a permission denial never blocks login. */
+ const pushSubscriptionPromise=beginPushSubscriptionFromLogin();
  const f=new FormData(e.target),loginId=String(f.get("loginId")||"").trim().toLowerCase(),email=loginId.includes("@")?loginId:loginId+"@accounts.ccsafeguard.local",password=String(f.get("password")||"");
  const button=e.submitter||e.target.querySelector('button[type="submit"],button:not([type])');
  if(button){button.disabled=true;button.textContent="Memeriksa...";}
@@ -115,6 +149,9 @@ async function signIn(e){
   const {data,error}=await supabase.auth.signInWithPassword({email,password});
   if(error)throw error;
   await enterPortal(data.user);
+  const pushSubscription=await pushSubscriptionPromise;
+  if(pushSubscription?.endpoint)await savePushSubscription(pushSubscription,true);
+  else if(pushSubscription?.pushError)toast("Akun berhasil masuk. Notifikasi latar belakang belum aktif: "+pushSubscription.pushError);
  }catch(err){
   const msg=err?.message||"Login gagal. Periksa koneksi dan konfigurasi Supabase.";
   showAuthError(msg);
@@ -122,7 +159,7 @@ async function signIn(e){
  }finally{if(button){button.disabled=false;button.textContent="Masuk →";}}
 }
 async function logout(){
- try{await audit("Logout",user?.name||"Pengguna");save();if(realtimeChannel){await supabase.removeChannel(realtimeChannel);realtimeChannel=null;}await supabase.auth.signOut();}
+ try{await audit("Logout",user?.name||"Pengguna");save();await removeCurrentPushSubscription();pushReady=false;if(realtimeChannel){await supabase.removeChannel(realtimeChannel);realtimeChannel=null;}await supabase.auth.signOut();}
  catch(err){toast("Gagal mengakhiri sesi cloud: "+(err.message||""));return;}
  user=null;db.reports=[];show("login");$("loginForm").reset();
 }
