@@ -11,7 +11,7 @@ An interactive mini-soccer match-operations dashboard for CC Cup XLI, maintained
 - **Incident reporting:** category, priority, objective chronology and a local handling flow.
 - **Rule Assistant:** decision-support guidance for typical situations and safety priorities; it never substitutes for the referee's official decision or the competition SOP.
 - **CardSync:** records confirmed cards by team, jersey number and match code; tracks two yellows and prevents an additional card after a recorded red for that player in the same match.
-- **Notifications:** opt-in vibration on compatible devices, opt-in sound and a visual alert for new local incident reports. Includes an alert test button.
+- **Notifications:** opt-in vibration on compatible devices, opt-in sound and a visual alert for new local incident reports..
 - **Statistics:** counts and local CSV export.
 
 ## New operations modules (October 2026)
