@@ -139,23 +139,24 @@ async function loadCloudProfile(authUser){
 }
 async function enterPortal(authUser){
  const profile=await loadCloudProfile(authUser);
- user={id:authUser.id,email:authUser.email,role:profile.role,name:profile.display_name||authUser.email};
+ user={id:authUser.id,email:authUser.email,role:String(profile.role||"").trim().toLowerCase(),name:profile.display_name||authUser.email};
  $("loginError").hidden=true;
+ const adminAccess=user.role==="admin";
+ /* Tampilkan navigasi sesuai profil segera setelah profil terverifikasi, tanpa menunggu sinkronisasi notifikasi. */
+ $("auditNav").hidden=!adminAccess;$("accountsNav").hidden=!adminAccess;
+ $("auditNav").setAttribute("aria-hidden",String(!adminAccess));$("accountsNav").setAttribute("aria-hidden",String(!adminAccess));
+ $("displayUser").textContent=user.name;$("displayRole").textContent=ROLE[user.role];$("avatar").textContent=ROLE[user.role][0];$("roleTitle").textContent=ROLE[user.role].toUpperCase();
+ $("welcomeTitle").textContent=user.role==="clinic"?"Portal Klinik / P3K":user.role==="committee"?"Portal Panitia":"Dashboard Admin";
+ $("welcomeText").textContent=user.role==="clinic"?"Laporan medis serta laporan umum yang memanggil P3K.":user.role==="committee"?"Kirim laporan umum atau medis. Laporan medis diteruskan ke Klinik/P3K dan Admin.":"Seluruh laporan dan riwayat aktivitas.";
  /* Semua role dapat membuat laporan umum maupun medis; hak baca tetap dibatasi RLS. */
  await audit("Login",user.name);
  await loadCloudReports();
  await loadClinicRoster();
- await syncExistingPushSubscription();
- 
  subscribeRealtime();
  save();
- $("displayUser").textContent=user.name;$("displayRole").textContent=ROLE[user.role];$("avatar").textContent=ROLE[user.role][0];$("roleTitle").textContent=ROLE[user.role].toUpperCase();
- const adminAccess=String(user.role||"").trim().toLowerCase()==="admin";
- $("auditNav").hidden=!adminAccess;$("accountsNav").hidden=!adminAccess;
- $("auditNav").setAttribute("aria-hidden",String(!adminAccess));$("accountsNav").setAttribute("aria-hidden",String(!adminAccess));
- $("welcomeTitle").textContent=user.role==="clinic"?"Portal Klinik / P3K":user.role==="committee"?"Portal Panitia":"Dashboard Admin";
- $("welcomeText").textContent=user.role==="clinic"?"Laporan medis serta laporan umum yang memanggil P3K.":user.role==="committee"?"Kirim laporan umum atau medis. Laporan medis diteruskan ke Klinik/P3K dan Admin.":"Seluruh laporan dan riwayat aktivitas.";
  show("app");go("overview");render();
+ /* Sinkronisasi push bukan syarat masuk portal; kegagalannya tidak boleh menghalangi menu Admin. */
+ void syncExistingPushSubscription().catch(err=>console.warn("Push sync skipped:",err));
 }
 async function signIn(e){
  e.preventDefault();
