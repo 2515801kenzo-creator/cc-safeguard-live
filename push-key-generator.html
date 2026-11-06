@@ -1,0 +1,62 @@
+<!doctype html>
+<html lang="id">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<meta name="robots" content="noindex,nofollow">
+<title>CC SafeGuard — Generator Kunci Web Push</title>
+<style>
+*{box-sizing:border-box}body{margin:0;padding:28px 16px;background:#f4f7fa;color:#173449;font:15px/1.55 system-ui,-apple-system,"Segoe UI",sans-serif}
+main{max-width:760px;margin:25px auto;background:#fff;border:1px solid #e3ebef;border-radius:18px;padding:26px;box-shadow:0 12px 35px #17344912}
+h1{font-size:26px;line-height:1.2;margin:8px 0}.muted{color:#718394;font-size:13px}
+.warning{background:#fff5e8;border:1px solid #efd7b4;color:#80531b;border-radius:10px;padding:13px;font-size:13px;margin:18px 0}
+button{border:0;border-radius:9px;padding:11px 15px;background:#1fc49a;color:#073c30;font-weight:800;cursor:pointer}
+button.secondary{background:#eef3f6;color:#28465b;border:1px solid #dbe5eb}
+label{display:block;font-size:12px;font-weight:800;margin:18px 0 6px}
+textarea{width:100%;min-height:76px;border:1px solid #dce5ea;border-radius:9px;padding:11px;font:12px/1.5 ui-monospace,monospace;resize:vertical;background:#fbfcfd}
+#private{min-height:145px}
+.actions{display:flex;gap:8px;flex-wrap:wrap;margin-top:8px}
+.status{font-size:12px;color:#627b8b;margin-top:12px}
+footer{font-size:11px;color:#8394a0;margin-top:20px;border-top:1px solid #edf1f4;padding-top:14px}
+</style>
+</head>
+<body><main>
+<p class="muted">CC SAFEGUARD LIVE · PENGATURAN WEB PUSH</p>
+<h1>Generator kunci notifikasi</h1>
+<p class="muted">Halaman ini membuat pasangan kunci di browser perangkatmu. Kunci tidak dikirim ke server, tidak disimpan ke database, dan tidak dimasukkan ke GitHub.</p>
+<div class="warning"><b>Rahasia:</b> JSON kunci privat hanya boleh ditempel ke Secrets Edge Functions dan Supabase Vault. Jangan kirim ke chat, jangan unggah ke GitHub, dan jangan bagikan ke siapa pun. Yang boleh dibagikan untuk mengatur website adalah Application Server Key (PUBLIC).</div>
+<button id="generate">Buat pasangan kunci</button>
+<p id="status" class="status">Belum ada kunci yang dibuat.</p>
+<label for="public">Application Server Key (PUBLIC) — boleh dipasang di website</label>
+<textarea id="public" readonly placeholder="Tekan Buat pasangan kunci"></textarea>
+<div class="actions"><button class="secondary" data-copy="public">Salin kunci publik</button></div>
+<label for="private">VAPID Keys JSON (PRIVATE) — rahasia</label>
+<textarea id="private" readonly placeholder="Kunci privat akan muncul di sini setelah dibuat"></textarea>
+<div class="actions"><button class="secondary" data-copy="private">Salin JSON privat</button></div>
+<footer>Gunakan satu pasangan kunci untuk project CC SafeGuard Live. Jika membuat pasangan baru, semua perangkat harus mendaftar ulang dan kedua penyimpanan rahasia harus diperbarui.</footer>
+</main>
+<script>
+"use strict";
+const $=id=>document.getElementById(id);
+function base64url(buffer){const bytes=new Uint8Array(buffer);let binary="";for(const b of bytes)binary+=String.fromCharCode(b);return btoa(binary).replace(/\+/g,"-").replace(/\//g,"_").replace(/=+$/g,"");}
+$("generate").addEventListener("click",async()=>{
+ const button=$("generate");button.disabled=true;$("status").textContent="Membuat kunci di perangkat ini...";
+ try{
+  if(!globalThis.crypto?.subtle)throw new Error("Browser tidak menyediakan Web Crypto. Buka melalui HTTPS.");
+  const pair=await crypto.subtle.generateKey({name:"ECDSA",namedCurve:"P-256"},true,["sign","verify"]);
+  const publicKey=await crypto.subtle.exportKey("jwk",pair.publicKey);
+  const privateKey=await crypto.subtle.exportKey("jwk",pair.privateKey);
+  const rawPublic=await crypto.subtle.exportKey("raw",pair.publicKey);
+  $("public").value=base64url(rawPublic);
+  $("private").value=JSON.stringify({publicKey,privateKey});
+  $("status").textContent="Kunci selesai dibuat secara lokal. Simpan kunci privat hanya di Secrets dan Vault.";
+ }catch(error){$("status").textContent="Gagal membuat kunci: "+(error.message||"Kesalahan browser.");}
+ finally{button.disabled=false;}
+});
+document.addEventListener("click",async event=>{
+ const button=event.target.closest("[data-copy]");if(!button)return;
+ const value=$(button.dataset.copy).value;if(!value){$("status").textContent="Buat pasangan kunci terlebih dahulu.";return;}
+ try{await navigator.clipboard.writeText(value);$("status").textContent=button.dataset.copy==="private"?"JSON privat disalin. Jangan kirim atau unggah.":"Kunci publik disalin.";}
+ catch{$(button.dataset.copy).focus();$(button.dataset.copy).select();$("status").textContent="Pilih teks lalu salin secara manual.";}
+});
+</script></body></html>
