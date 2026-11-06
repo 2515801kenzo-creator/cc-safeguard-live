@@ -262,14 +262,7 @@ function renderList(){
 function go(page){
  const adminAccess=String(user?.role||"").trim().toLowerCase()==="admin";
  if((page==="audit"||page==="accounts")&&!adminAccess){toast("Menu ini hanya dapat dibuka oleh Admin.");return;}
- const target=Array.from(document.querySelectorAll(".page")).find(x=>x.dataset.view===page);
- if(!target){toast("Halaman tidak ditemukan: "+page);return;}
- document.querySelectorAll(".page").forEach(x=>{
-  const selected=x===target;
-  x.classList.toggle("active",selected);
-  x.style.display=selected?"block":"none";
-  x.setAttribute("aria-hidden",String(!selected));
- });
+ document.querySelectorAll(".page").forEach(x=>x.classList.toggle("active",x.dataset.view===page));
  document.querySelectorAll(".nav button").forEach(x=>x.classList.toggle("active",x.dataset.page===page));
  if(page==="reports")renderList();
  if(page==="audit")renderAudit();
