@@ -132,7 +132,9 @@ function showAuthError(message){const el=$("loginError");el.textContent=message;
 async function loadCloudProfile(authUser){
  const {data:profile,error}=await supabase.from("profiles").select("id,display_name,role,is_active").eq("id",authUser.id).maybeSingle();
  if(error)throw new Error("Profil akun gagal dibaca: "+error.message);
- if(!profile||profile.is_active!==true||!ROLE[profile.role])throw new Error("Profil akun tidak ditemukan, belum aktif, atau perannya belum diatur. Hubungi Admin.");
+ if(!profile||profile.is_active!==true)throw new Error("Profil akun tidak ditemukan atau belum aktif. Hubungi Admin.");
+ profile.role=String(profile.role||"").trim().toLowerCase();
+ if(!ROLE[profile.role])throw new Error("Peran akun tidak dikenali: "+String(profile.role||"-")+". Hubungi Admin.");
  return profile;
 }
 async function enterPortal(authUser){
@@ -148,7 +150,9 @@ async function enterPortal(authUser){
  subscribeRealtime();
  save();
  $("displayUser").textContent=user.name;$("displayRole").textContent=ROLE[user.role];$("avatar").textContent=ROLE[user.role][0];$("roleTitle").textContent=ROLE[user.role].toUpperCase();
- $("auditNav").hidden=user.role!=="admin";$("accountsNav").hidden=user.role!=="admin";
+ const adminAccess=String(user.role||"").trim().toLowerCase()==="admin";
+ $("auditNav").hidden=!adminAccess;$("accountsNav").hidden=!adminAccess;
+ $("auditNav").setAttribute("aria-hidden",String(!adminAccess));$("accountsNav").setAttribute("aria-hidden",String(!adminAccess));
  $("welcomeTitle").textContent=user.role==="clinic"?"Portal Klinik / P3K":user.role==="committee"?"Portal Panitia":"Dashboard Admin";
  $("welcomeText").textContent=user.role==="clinic"?"Laporan medis serta laporan umum yang memanggil P3K.":user.role==="committee"?"Kirim laporan umum atau medis. Laporan medis diteruskan ke Klinik/P3K dan Admin.":"Seluruh laporan dan riwayat aktivitas.";
  show("app");go("overview");render();
@@ -254,7 +258,16 @@ function renderList(){
  $("reportSub").textContent=activeReportTab==="completed"?"Arsip laporan selesai. Data tetap tersimpan dan dapat dibuka kembali.":user.role==="clinic"?"Tugas aktif yang menjadi kewenangan Klinik/P3K.":user.role==="committee"?"Laporan umum dari seluruh Panitia.":"Pusat laporan sesuai kewenangan akun.";
 }
 
-function go(page){document.querySelectorAll(".page").forEach(x=>x.classList.toggle("active",x.dataset.view===page));document.querySelectorAll(".nav button").forEach(x=>x.classList.toggle("active",x.dataset.page===page));if(page==="reports")renderList();if(page==="audit")renderAudit();if(page==="accounts"&&user.role==="admin")renderAccounts();window.scrollTo(0,0);}
+function go(page){
+ const adminAccess=String(user?.role||"").trim().toLowerCase()==="admin";
+ if((page==="audit"||page==="accounts")&&!adminAccess){toast("Menu ini hanya dapat dibuka oleh Admin.");return;}
+ document.querySelectorAll(".page").forEach(x=>x.classList.toggle("active",x.dataset.view===page));
+ document.querySelectorAll(".nav button").forEach(x=>x.classList.toggle("active",x.dataset.page===page));
+ if(page==="reports")renderList();
+ if(page==="audit")renderAudit();
+ if(page==="accounts")renderAccounts();
+ window.scrollTo(0,0);
+}
 async function claimClinicTask(reportId){
   const r=db.reports.find(x=>x.id===(reportId||detailId));if(!r||user?.role!=="clinic")return;
   const mine=clinicRoster.find(p=>p.user_id===user.id);
