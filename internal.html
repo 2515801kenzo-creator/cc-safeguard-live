@@ -244,19 +244,20 @@ async function setMyDutyStatus(status){
 }
 function visible(){return db.reports.filter(r=>user.role==="admin"||(user.role==="committee"&&r.type==="general")||(user.role==="clinic"&&(r.type==="medical"||(r.type==="general"&&r.needsClinic)))); }
 function sorted(a){return[...a].sort((x,y)=>(RANK[y.priority]||0)-(RANK[x.priority]||0)||new Date(y.createdAt)-new Date(x.createdAt));}
-function card(r){let st=r.status.toLowerCase().replaceAll(" ","-");return'<article class="item"><div class="itemtop"><div><h3>'+esc(r.title)+'</h3><span class="meta">'+esc(r.code||r.id)+' · '+esc(date(r.createdAt))+'</span></div><span class="tag '+esc(r.priority)+'">'+esc(r.priority)+'</span></div><div class="tags"><span class="tag '+(r.type==="medical"?"medis":"")+'">'+(r.type==="medical"?"MEDIS":"UMUM")+'</span><span class="tag status '+st+'">'+esc(r.status)+'</span>'+(r.needsClinic?'<span class="tag Tinggi">P3K dipanggil</span>':"")+'</div><p class="desc">'+esc(r.description).slice(0,210)+'</p><div class="itemfoot"><span class="meta">Pelapor: <b>'+esc(r.reporter)+'</b></span><button class="linkbtn" data-open="'+esc(r.id)+'">Buka detail →</button></div></article>';}
+function card(r){let st=r.status.toLowerCase().replaceAll(" ","-"),urgency=["Darurat","Tinggi","Sedang","Rendah"].includes(r.priority)?r.priority:"Rendah";return'<article class="item urgency-'+urgency+'"><div class="itemtop"><div><h3>'+esc(r.title)+'</h3><span class="meta">'+esc(r.code||r.id)+' · '+esc(date(r.createdAt))+'</span></div><span class="tag '+urgency+'">'+urgency.toUpperCase()+'</span></div><div class="tags"><span class="tag '+(r.type==="medical"?"medis":"")+'">'+(r.type==="medical"?"MEDIS":"UMUM")+'</span><span class="tag status '+st+'">'+esc(r.status)+'</span>'+(r.needsClinic?'<span class="tag Tinggi">P3K dipanggil</span>':"")+'</div><p class="desc">'+esc(r.description).slice(0,210)+'</p><div class="itemfoot"><span class="meta">Pelapor: <b>'+esc(r.reporter)+'</b> · '+esc(r.location||"Lokasi tidak dicantumkan")+'</span><button class="linkbtn" data-open="'+esc(r.id)+'">Buka detail →</button></div></article>';}
 function render(){let a=visible();let active=a.filter(r=>!(r.status==="Selesai"||(r.type==="general"&&r.needsClinic&&r.clinicCallStatus==="completed")));$("mTotal").textContent=a.length;$("mReview").textContent=a.filter(r=>r.status==="Baru").length;$("mProgress").textContent=a.filter(r=>r.status==="Sedang ditangani").length;$("mDone").textContent=a.filter(r=>r.status==="Selesai").length;$("priorityList").innerHTML=sorted(user.role==="clinic"?active:a).slice(0,4).map(card).join("")||'<div class="empty">Belum ada laporan untuk peran ini.</div>';renderList();renderClinicRoster();if(user.role==="admin"){renderAudit();}}
+function isReportCompleted(r){return r.status==="Selesai"||(r.type==="general"&&r.needsClinic&&r.clinicCallStatus==="completed");}
 function renderList(){
- let q=$("search").value.toLowerCase(),st=$("filterStatus").value,pr=$("filterPriority").value;
- let a=sorted(visible().filter(r=>(!q||[r.id,r.title,r.reporter,r.description].join(" ").toLowerCase().includes(q))&&(!st||r.status===st)&&(!pr||r.priority===pr)));
- let completed=a.filter(r=>user.role==="clinic"&&(r.status==="Selesai"||(r.type==="general"&&r.needsClinic&&r.clinicCallStatus==="completed")));
- let completedIds=new Set(completed.map(r=>r.id));
- let active=user.role==="clinic"?a.filter(r=>!completedIds.has(r.id)):a;
- $("allReports").innerHTML=active.map(card).join("")||'<div class="empty">Tidak ada laporan aktif yang cocok.</div>';
- const archiveSection=$("clinicCompletedReportsSection");
- if(archiveSection){archiveSection.hidden=user.role!=="clinic";$("clinicCompletedReports").innerHTML=completed.map(card).join("")||'<div class="empty">Belum ada laporan selesai.</div>';}
- $("reportSub").textContent=user.role==="clinic"?"Tugas aktif ditampilkan di atas; laporan selesai tersimpan di bagian riwayat.":user.role==="committee"?"Laporan umum dari seluruh Panitia. Laporan medis diteruskan ke Klinik/P3K.":"Pusat bersama: seluruh laporan umum dan medis.";
+ const q=$("search").value.trim().toLowerCase(),st=$("filterStatus").value,pr=$("filterPriority").value;
+ const all=sorted(visible()),completedAll=all.filter(isReportCompleted),activeAll=all.filter(r=>!isReportCompleted(r));
+ $("activeReportCount").textContent=activeAll.length;$("completedReportCount").textContent=completedAll.length;
+ document.querySelectorAll("[data-report-tab]").forEach(b=>{const selected=b.dataset.reportTab===activeReportTab;b.classList.toggle("active",selected);b.setAttribute("aria-pressed",String(selected));});
+ const selected=activeReportTab==="completed"?completedAll:activeAll;
+ const matches=selected.filter(r=>(!q||[r.id,r.code,r.title,r.reporter,r.location,r.description,r.type,r.priority,r.status].join(" ").toLowerCase().includes(q))&&(!st||r.status===st)&&(!pr||r.priority===pr));
+ $("allReports").innerHTML=matches.map(card).join("")||'<div class="empty">'+(activeReportTab==="completed"?"Belum ada laporan yang selesai atau tidak ada hasil yang cocok.":"Tidak ada laporan aktif yang cocok.")+'</div>';
+ $("reportSub").textContent=activeReportTab==="completed"?"Arsip laporan selesai. Data tetap tersimpan dan dapat dibuka kembali.":user.role==="clinic"?"Tugas aktif yang menjadi kewenangan Klinik/P3K.":user.role==="committee"?"Laporan umum dari seluruh Panitia.":"Pusat laporan sesuai kewenangan akun.";
 }
+
 function go(page){document.querySelectorAll(".page").forEach(x=>x.classList.toggle("active",x.dataset.view===page));document.querySelectorAll(".nav button").forEach(x=>x.classList.toggle("active",x.dataset.page===page));if(page==="reports")renderList();if(page==="audit")renderAudit();if(page==="accounts"&&user.role==="admin")renderAccounts();window.scrollTo(0,0);}
 async function claimClinicTask(){
   const r=db.reports.find(x=>x.id===detailId);if(!r||user?.role!=="clinic")return;
@@ -426,7 +427,7 @@ $("enablePushButton").addEventListener("click",activatePushNotifications);
 
 $("createAccountForm").addEventListener("submit",e=>{e.preventDefault();createAccount(e.currentTarget);});$("refreshAccounts").addEventListener("click",()=>renderAccounts());
 
-document.addEventListener("click",e=>{let n=e.target.closest("[data-page]");if(n)go(n.dataset.page);
+document.addEventListener("click",e=>{let reportTab=e.target.closest("[data-report-tab]");if(reportTab){activeReportTab=reportTab.dataset.reportTab;renderList();}let n=e.target.closest("[data-page]");if(n)go(n.dataset.page);
 let accountToggle=e.target.closest("[data-account-toggle]");if(accountToggle)toggleCloudAccount(accountToggle.dataset.accountToggle,accountToggle.dataset.active!=="true");
 let accountReset=e.target.closest("[data-account-reset]");if(accountReset)resetCloudAccountPassword(accountReset.dataset.accountReset);
 let accountDelete=e.target.closest("[data-account-delete]");if(accountDelete)deleteCloudAccount(accountDelete.dataset.accountDelete);
