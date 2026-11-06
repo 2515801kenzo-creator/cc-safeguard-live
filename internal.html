@@ -77,7 +77,7 @@ function deliverPortalNotification(title,body,tag){if(pushReady)return;if("Notif
 function pushApplicationServerKey(value){const padding="=".repeat((4-value.length%4)%4),base64=(value+padding).replace(/-/g,"+").replace(/_/g,"/"),raw=atob(base64);return Uint8Array.from(raw,c=>c.charCodeAt(0));}
 function updatePushPanel(message){
  const status=$("pushStatus"),button=$("enablePushButton");if(!status||!button)return;
- if(message){status.textContent=message;return;}
+ if(message){status.textContent=message;button.textContent="Coba Lagi";button.disabled=false;return;}
  if(!("Notification" in window)||!("serviceWorker" in navigator)||!("PushManager" in window)){status.textContent="Browser ini tidak mendukung Web Push. Gunakan Chrome o Edge terbaru.";button.disabled=true;return;}
  if(Notification.permission==="denied"){status.textContent="Izin notifikasi diblokir di pengaturan browser. Ubah izin situs menjadi Izinkan, lalu muat ulang halaman.";button.textContent="Izin diblokir";button.disabled=true;return;}
  if(pushReady){status.textContent="Perangkat ini sudah terdaftar untuk menerima notifikasi laporan.";button.textContent="Notifikasi Aktif";button.disabled=true;return;}
