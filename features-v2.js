@@ -201,11 +201,7 @@ function init(){
  var soundToggle=$("sound-enabled");
  if(soundToggle)soundToggle.addEventListener("change",function(){localStorage.setItem(SOUND_KEY,this.checked?"1":"0");displayAudioSettings();message(this.checked?"Peringatan suara aktif.":"Peringatan suara nonaktif.");});
  var alertTest=$("alert-test");
- if(alertTest)alertTest.addEventListener("click",function(){
-  var vib=localStorage.getItem(VIBRATION_KEY)==="1"&&vibrate();
-  var aud=sound();announce("Tes peringatan","Indikator visual aktif. "+(vib?"Perintah getaran dikirim.":"Getaran tidak tersedia atau dimatikan.")+(aud?" Suara dicoba.":" Suara tidak tersedia."));
-  message("Tes dijalankan: visual"+(vib?" + getaran":"")+(aud?" + suara":"")+".");
- });
+ if(alertTest)alertTest.remove();
  var issue=$("decision-issue");
  if(issue)$("decision-check").addEventListener("click",makeDecision);
  var close=$("alert-close");
