@@ -235,7 +235,7 @@ function renderClinicRoster(){
 async function setMyDutyStatus(status){
   if(user?.role!=="clinic"||!["available","busy","off_duty"].includes(status)){toast("Perubahan status hanya tersedia untuk akun Klinik/P3K.");return;}
   const mine=clinicRoster.find(p=>p.user_id===user.id);if(!mine||!mine.is_active){toast("Akun P3K tidak aktif atau tidak ditemukan.");return;}
-  const {count,error:checkError}=await supabase.from("clinic_call_assignments").select("id",{count:"exact",head:true}).eq("clinic_user_id",user.id).in("status",["acknowledged","en_route","arrived"]);
+  const {count,error:checkError}=await supabase.from("clinic_call_assignments").select("id",{count:"exact",head:true}).eq("clinic_user_id",user.id).in("status",["acknowledged","en_route","arrived","in_treatment"]);
   if(checkError){toast("Status penanganan belum dapat diperiksa: "+checkError.message);return;}
   if((count||0)>0&&status!=="busy"){toast("Masih ada tugas P3K yang aktif. Selesaikan penanganan terlebih dahulu.");return;}
   const {error}=await supabase.from("clinic_staff_directory").update({duty_status:status}).eq("user_id",user.id);
