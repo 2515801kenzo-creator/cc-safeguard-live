@@ -175,7 +175,7 @@ async function signIn(e){
  }finally{if(button){button.disabled=false;button.textContent="Masuk →";}}
 }
 async function logout(){
- try{await audit("Logout",user?.name||"Pengguna");save();await removeCurrentPushSubscription();pushReady=false;if(realtimeChannel){await supabase.removeChannel(realtimeChannel);realtimeChannel=null;}await supabase.auth.signOut();}
+ try{await audit("Logout",user?.name||"Pengguna");save();pushReady=false;if(realtimeChannel){await supabase.removeChannel(realtimeChannel);realtimeChannel=null;}await supabase.auth.signOut();}
  catch(err){toast("Gagal mengakhiri sesi cloud: "+(err.message||""));return;}
  user=null;db.reports=[];show("login");$("loginForm").reset();
 }
