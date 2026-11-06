@@ -76,17 +76,13 @@ async function registerAppServiceWorker(){if(!("serviceWorker" in navigator))ret
 async function showSystemNotification(title,body,tag){if(!("Notification" in window)||Notification.permission!=="granted")return;try{const registration=await navigator.serviceWorker.ready;await registration.showNotification(title,{body,icon:"./assets/safeguard-icon.svg",badge:"./assets/safeguard-icon.svg",tag,silent:false,vibrate:[160,90,160],renotify:false,data:{url:"./internal.html"}});}catch(err){console.warn("System notification failed:",err);}}
 function deliverPortalNotification(title,body,tag){if(pushReady)return;if("Notification" in window&&Notification.permission==="granted"){void showSystemNotification(title,body,tag);}else{toast(title+". "+body);}}
 function pushApplicationServerKey(value){const padding="=".repeat((4-value.length%4)%4),base64=(value+padding).replace(/-/g,"+").replace(/_/g,"/"),raw=atob(base64);return Uint8Array.from(raw,c=>c.charCodeAt(0));}
-function updatePushPanel(message){
- const status=$("pushStatus"),button=$("enablePushButton");if(!status||!button)return;
- if(message){status.textContent=message;button.textContent="Coba Lagi";button.disabled=false;return;}
- if(!("Notification" in window)||!("serviceWorker" in navigator)||!("PushManager" in window)){status.textContent="Browser ini tidak mendukung Web Push. Gunakan browser modern yang mendukung notifikasi.";button.disabled=true;return;}
-  const ios=/iphone|ipad|ipod/i.test(navigator.userAgent),standalone=window.matchMedia("(display-mode: standalone)").matches||navigator.standalone===true;
-  if(ios&&!standalone){status.textContent="Di iPhone/iPad: tambahkan portal ke Layar Utama, lalu buka ikon portal dan aktifkan notifikasi dari sana.";button.textContent="Buka dari Layar Utama";button.disabled=true;return;}
- if(Notification.permission==="denied"){status.textContent="Izin notifikasi diblokir di pengaturan browser. Ubah izin situs menjadi Izinkan, lalu muat ulang halaman.";button.textContent="Izin diblokir";button.disabled=true;return;}
- if(pushReady){status.textContent="Perangkat ini sudah terdaftar untuk menerima notifikasi laporan.";button.textContent="Notifikasi Aktif";button.disabled=true;return;}
- if(Notification.permission==="granted"){status.textContent="Izin browser sudah diberikan. Tekan tombol untuk menyelesaikan pendaftaran perangkat.";button.textContent="Selesaikan Aktivasi";}
- else{status.textContent="Notifikasi belum aktif di perangkat ini.";button.textContent="Aktifkan Notifikasi";}
- button.disabled=false;
+function updatePushPanel(){
+ const status=$("pushStatus");if(!status)return;
+ if(!("Notification" in window)||!("serviceWorker" in navigator)||!("PushManager" in window)){status.textContent="Status notifikasi: Tidak didukung browser ini.";return;}
+ if(Notification.permission==="denied"){status.textContent="Status notifikasi: Nonaktif — izin diblokir di pengaturan browser.";return;}
+ if(pushReady){status.textContent="Status notifikasi: Aktif — perangkat ini terdaftar menerima pemberitahuan.";return;}
+ if(Notification.permission==="granted"){status.textContent="Status notifikasi: Belum aktif — izin browser sudah diberikan, tetapi perangkat belum terdaftar.";return;}
+ status.textContent="Status notifikasi: Belum aktif.";
 }
 async function activatePushNotifications(){
  const button=$("enablePushButton");if(!user){toast("Silakan login terlebih dahulu.");return;}
@@ -265,10 +261,16 @@ async function claimClinicTask(reportId){
   if(!mine||mine.duty_status!=="available"){toast("Ubah status menjadi Siap bertugas sebelum mengambil panggilan.");return;}
   const {error}=await supabase.rpc("ccsg_claim_clinic_call",{p_report_id:r.id});
   if(error){toast("Tugas belum dapat diambil: "+error.message);return;}
+  await loadCloudReports();
+  const assignment=clinicAssignments.find(a=>a.report_id===r.id&&a.clinic_user_id===user.id);
+  if(assignment&&assignment.status==="acknowledged"){
+   const {error:statusError}=await supabase.rpc("ccsg_update_clinic_assignment",{p_assignment_id:assignment.id,p_status:"en_route"});
+   if(statusError){await loadClinicRoster();render();if(!$("detailModal").hidden)openDetail(r.id);toast("Tugas berhasil diambil, tetapi status OTW belum tersimpan: "+statusError.message);return;}
+  }
   await audit("OTW menuju lokasi",r.code);
   await loadCloudReports();await loadClinicRoster();render();
   if(!$("detailModal").hidden)openDetail(r.id);
-  toast("Anda tercatat OTW dan status petugas berubah menjadi Sibuk. Setelah tiba, tekan Mulai Penanganan.");
+  toast("Tugas diambil. Status Anda Sibuk dan tercatat OTW. Setelah tiba, tekan Mulai Penanganan.");
 }
 async function requestClinicCall(){
   const r=db.reports.find(x=>x.id===detailId);if(!r||!(user?.role==="committee"||user?.role==="admin"))return;
@@ -424,7 +426,7 @@ async function deleteCloudAccount(id){
 }function events(){
 $("loginForm").addEventListener("submit",signIn);$("logout").addEventListener("click",logout);
 $("refreshClinicRoster").addEventListener("click",()=>loadClinicRoster());
-$("enablePushButton").addEventListener("click",activatePushNotifications);
+// Status notifikasi hanya ditampilkan; tidak ada tombol Coba Lagi.
 
 
 $("createAccountForm").addEventListener("submit",e=>{e.preventDefault();createAccount(e.currentTarget);});$("refreshAccounts").addEventListener("click",()=>renderAccounts());
