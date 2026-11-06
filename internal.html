@@ -62,7 +62,7 @@ const ROLE={clinic:"Klinik / P3K",committee:"Panitia",admin:"Admin"};
 const RANK={Darurat:4,Tinggi:3,Sedang:2,Rendah:1};
 let db={reports:[],evaluations:[],audit:[]},user=null,detailId=null,cloudProfiles=[],clinicRoster=[],realtimeChannel=null;
 const PHOTO_BUCKET="CC-report-photo";
-const PUSH_VAPID_PUBLIC_KEY=""; // Diisi setelah kunci publik Web Push dibuat.
+const PUSH_VAPID_PUBLIC_KEY="BHzv7QNxp679F2T4alq8wsOQrDuwH1BD_64FC7Ojf_ppaXLA1M-AQsWPhisJ8blSaVBCKY8Oxvxz3nRGeVIgk0o"; // Public VAPID key; private key remains in Supabase Vault.
 let pushReady=false;
 const $=id=>document.getElementById(id);
 const esc=s=>String(s??"").replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
