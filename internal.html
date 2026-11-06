@@ -4,6 +4,7 @@
 <meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
 <meta name="theme-color" content="#102337">
 <title>CC SafeGuard | Portal Internal</title>
+<link rel="manifest" href="./manifest.webmanifest">
 <style>
 :root{--navy:#102337;--mint:#20c99a;--ink:#1b3144;--muted:#718394;--line:#e4ebef;--bg:#f4f7fa;--red:#be4651;--amber:#a86a20}
 *{box-sizing:border-box}body{margin:0;background:var(--bg);color:var(--ink);font:14px/1.55 Inter,system-ui,-apple-system,"Segoe UI",sans-serif}button,input,select,textarea{font:inherit}button{cursor:pointer}[hidden]{display:none!important}button:focus-visible,input:focus-visible,select:focus-visible,textarea:focus-visible{outline:3px solid #5dd9bc;outline-offset:2px}
@@ -18,7 +19,7 @@ button{border:0}.btn{border-radius:10px;padding:10px 15px;min-height:40px;font-s
 @media(max-width:980px){.auth{gap:25px}.columns{grid-template-columns:1fr}.metrics{grid-template-columns:repeat(2,1fr)}}
 @media(max-width:700px){header{padding:7px 12px;min-height:66px}.school-logo{width:34px;height:41px}.brand{gap:8px}.brand b{font-size:11px}.brand small{font-size:8px;letter-spacing:.07em}.auth{grid-template-columns:1fr;max-width:550px;margin:26px auto;gap:20px}.intro h1{font-size:38px}.school-event-lockup{gap:8px}.login-school-logo{width:70px;height:82px}.lockup-copy b{font-size:9px}.lockup-copy small{font-size:8px}.card{padding:20px}#app{grid-template-columns:1fr}.sidebar{position:sticky;top:0;z-index:5;padding:7px 9px}.sidebrand,.navlabel,.sidefoot{display:none}.nav{display:flex;overflow:auto;gap:3px}.nav button{white-space:nowrap;padding:9px;font-size:10px}.topbar{height:55px;padding:0 14px}.content{padding:19px 13px 32px}.heading{align-items:flex-start;flex-direction:column}.heading>.btn{width:100%}.filter{flex-wrap:wrap}.filter input{flex-basis:100%}.filter select{flex:1}.formgrid{grid-template-columns:1fr}.wide{grid-column:auto}.rubrics{grid-template-columns:1fr}.detailgrid{grid-template-columns:1fr 1fr}}
 @media print{header,.sidebar,.topbar,.content,.modal{display:none!important}.print{display:block!important;padding:25px;font:12px/1.6 Arial;color:#111}.print h1{font-size:20px}.print table{border-collapse:collapse;width:100%}.print td,.print th{border:1px solid #aaa;padding:7px;text-align:left}.sign{display:flex;justify-content:space-between;margin-top:55px}}
- .account-panel{display:grid;gap:12px}</style>
+ .account-panel{display:grid;gap:12px}.roster-note{font-size:10px;color:#81919d;margin:5px 0 12px}.roster-actions{display:flex;gap:8px;flex-wrap:wrap;margin-top:12px}.notification-copy{font-size:11px;color:#748898;margin:6px 0 12px}.roster-item{display:flex;align-items:center;justify-content:space-between;gap:10px}.roster-item h3{margin:0 0 3px}.roster-status{white-space:nowrap}</style>
 </head>
 <body>
 <header><a class="brand" href="index.html" aria-label="CC SafeGuard Live - Kolese Kanisius"><img class="school-logo" src="assets/kolese-kanisius-logo.svg" alt="Logo Kolese Kanisius"><span><b>CC SAFEGUARD LIVE</b><small>KOLESE KANISIUS • PORTAL INTERNAL</small></span></a></header>
@@ -40,7 +41,7 @@ button{border:0}.btn{border-radius:10px;padding:10px 15px;min-height:40px;font-s
  <aside class="sidebar"><div class="sidebrand"><div class="sidebrand-top"><img src="assets/kolese-kanisius-logo.svg" alt="Logo Kolese Kanisius"><div><b>CC SAFEGUARD</b><small>INTERNAL PORTAL</small></div></div></div><div class="navlabel">MENU UTAMA</div><nav class="nav"><button class="active" data-page="overview"><span>▦</span>Ringkasan</button><button data-page="reports"><span>▤</span>Pusat laporan</button><button data-page="new"><span>＋</span>Buat laporan</button><button data-page="audit" id="auditNav"><span>◷</span>Riwayat aktivitas</button><button data-page="accounts" id="accountsNav" hidden><span>♙</span>Manajemen akun</button></nav><div class="sidefoot">CC SafeGuard Live<br>Internal Reporting & Operations</div></aside>
  <div class="main"><div class="topbar"><b id="roleTitle">PORTAL INTERNAL</b><div class="user"><i id="avatar">U</i><div><b id="displayUser">Pengguna</b><small id="displayRole">Peran</small></div><button class="btn secondary" id="logout" style="padding:7px 10px;min-height:32px">Keluar</button></div></div>
  <main class="content">
-  <section class="page active" data-view="overview"><div class="heading"><div><span class="eyebrow">DASHBOARD</span><h1 id="welcomeTitle">Ringkasan</h1><p id="welcomeText">Pantau laporan sesuai kewenangan.</p></div><button class="btn primary" data-goto="new">＋ Buat laporan</button></div><div class="notice"><b>Cloud & privasi:</b> laporan umum dapat dilihat Panitia dan Admin. Jika Panitia memanggil P3K, laporan itu juga terlihat oleh P3K. Laporan medis dapat dilihat Klinik/P3K dan Admin. Foto tersimpan di cloud privat dan hanya dapat dibuka oleh akun yang berwenang.</div><div class="metrics"><div class="metric"><small>Laporan terlihat</small><b id="mTotal">0</b><small>Total sesuai peran</small></div><div class="metric"><small>Perlu ditinjau</small><b id="mReview">0</b><small>Menunggu verifikasi</small></div><div class="metric"><small>Sedang ditangani</small><b id="mProgress">0</b><small>Dalam proses</small></div><div class="metric"><small>Selesai</small><b id="mDone">0</b><small>Penanganan ditutup</small></div></div><div class="columns"><section class="surface"><span class="eyebrow">PRIORITAS TERTINGGI</span><h2>Laporan yang perlu diperhatikan</h2><div id="priorityList" class="list"></div></section><aside class="surface"><span class="eyebrow">ALUR PENANGANAN</span><h2>Status laporan</h2><div class="steps"><div class="step"><i>1</i><div><b>Baru diterima</b><small>Laporan masuk ke sistem.</small></div></div><div class="step"><i>2</i><div><b>Verifikasi</b><small>Admin memeriksa laporan.</small></div></div><div class="step"><i>3</i><div><b>Penanganan</b><small>Petugas mencatat penanggung jawab dan tindakan.</small></div></div><div class="step"><i>4</i><div><b>Selesai</b><small>Catatan penanganan didokumentasikan.</small></div></div></div><p class="hint">Klasifikasi urgensi bukan diagnosis medis. Keadaan darurat harus segera disampaikan langsung kepada petugas medis.</p></aside></div></section>
+  <section class="page active" data-view="overview"><div class="heading"><div><span class="eyebrow">DASHBOARD</span><h1 id="welcomeTitle">Ringkasan</h1><p id="welcomeText">Pantau laporan sesuai kewenangan.</p></div><button class="btn primary" data-goto="new">＋ Buat laporan</button></div><div class="notice"><b>Cloud & privasi:</b> laporan umum dapat dilihat Panitia dan Admin. Jika Panitia memanggil P3K, laporan itu juga terlihat oleh P3K. Laporan medis dapat dilihat Klinik/P3K dan Admin. Foto tersimpan di cloud privat dan hanya dapat dibuka oleh akun yang berwenang.</div><div class="metrics"><div class="metric"><small>Laporan terlihat</small><b id="mTotal">0</b><small>Total sesuai peran</small></div><div class="metric"><small>Perlu ditinjau</small><b id="mReview">0</b><small>Menunggu verifikasi</small></div><div class="metric"><small>Sedang ditangani</small><b id="mProgress">0</b><small>Dalam proses</small></div><div class="metric"><small>Selesai</small><b id="mDone">0</b><small>Penanganan ditutup</small></div></div><section class="surface" style="margin:14px 0"><div class="itemtop"><div><span class="eyebrow">DIREKTORI PETUGAS</span><h2>Petugas Klinik / P3K</h2><p class="muted">Daftar akun P3K yang terdaftar dan status kesiapan petugas.</p></div><button class="btn secondary" id="refreshClinicRoster">Perbarui</button></div><div id="clinicRosterList" class="list"><div class="muted">Memuat daftar petugas...</div></div><div id="clinicDutyControls" class="roster-actions" hidden><span class="muted" style="align-self:center">Status saya:</span><button class="btn secondary" data-duty-status="available">Siap bertugas</button><button class="btn secondary" data-duty-status="off_duty">Tidak bertugas</button></div></section><section class="surface" style="margin:14px 0"><div class="itemtop"><div><span class="eyebrow">PEMBERITAHUAN</span><h2>Notifikasi perangkat</h2><p class="notification-copy">Izinkan notifikasi agar pemberitahuan sistem muncul saat portal terbuka dan terhubung.</p><p id="notificationStatus" class="muted">Memeriksa dukungan browser...</p></div><div class="actions"><button class="btn primary" id="enableNotifications">Aktifkan notifikasi</button><button class="btn secondary" id="testNotification">Uji notifikasi</button></div></div></section><div class="columns"><section class="surface"><span class="eyebrow">PRIORITAS TERTINGGI</span><h2>Laporan yang perlu diperhatikan</h2><div id="priorityList" class="list"></div></section><aside class="surface"><span class="eyebrow">ALUR PENANGANAN</span><h2>Status laporan</h2><div class="steps"><div class="step"><i>1</i><div><b>Baru diterima</b><small>Laporan masuk ke sistem.</small></div></div><div class="step"><i>2</i><div><b>Verifikasi</b><small>Admin memeriksa laporan.</small></div></div><div class="step"><i>3</i><div><b>Penanganan</b><small>Petugas mencatat penanggung jawab dan tindakan.</small></div></div><div class="step"><i>4</i><div><b>Selesai</b><small>Catatan penanganan didokumentasikan.</small></div></div></div><p class="hint">Klasifikasi urgensi bukan diagnosis medis. Keadaan darurat harus segera disampaikan langsung kepada petugas medis.</p></aside></div></section>
   <section class="page" data-view="reports"><div class="heading"><div><span class="eyebrow">PENGELOLAAN</span><h1>Pusat laporan</h1><p id="reportSub">Daftar laporan sesuai akses pengguna.</p></div><div class="actions"><button class="btn secondary" id="exportReports">Ekspor CSV</button><button class="btn primary" data-goto="new">＋ Baru</button></div></div><section class="surface"><div class="filter"><input id="search" type="search" placeholder="Cari ID, pelapor, atau kejadian"><select id="filterStatus"><option value="">Semua status</option><option>Baru</option><option>Perlu verifikasi</option><option>Diverifikasi</option><option>Sedang ditangani</option><option>Selesai</option><option>Ditolak</option></select><select id="filterPriority"><option value="">Semua urgensi</option><option>Darurat</option><option>Tinggi</option><option>Sedang</option><option>Rendah</option></select></div><div id="allReports" class="list"></div></section></section>
   <section class="page" data-view="new"><div class="heading"><div><span class="eyebrow">FORMULIR TERPADU</span><h1>Buat laporan</h1><p>Tuliskan kronologi secara singkat, jelas, dan objektif.</p></div></div><section class="surface" id="privateForm"></section></section>
   <section class="page" data-view="audit"><div class="heading"><div><span class="eyebrow">TRANSPARANSI</span><h1>Riwayat aktivitas</h1><p>Riwayat tindakan dan perubahan dalam sistem.</p></div></div><section class="surface" id="auditList"></section></section>
@@ -59,7 +60,7 @@ const SUPABASE_KEY="sb_publishable_PO48R3IsPnzH6ccOiafxWA_CTvZ_DVe";
 const supabase=window.supabase.createClient(SUPABASE_URL,SUPABASE_KEY,{auth:{persistSession:true,autoRefreshToken:true,detectSessionInUrl:true}});
 const ROLE={clinic:"Klinik / P3K",committee:"Panitia",admin:"Admin"};
 const RANK={Darurat:4,Tinggi:3,Sedang:2,Rendah:1};
-let db={reports:[],evaluations:[],audit:[]},user=null,detailId=null,cloudProfiles=[],realtimeChannel=null;
+let db={reports:[],evaluations:[],audit:[]},user=null,detailId=null,cloudProfiles=[],clinicRoster=[],realtimeChannel=null;
 const PHOTO_BUCKET="CC-report-photo";
 const $=id=>document.getElementById(id);
 const esc=s=>String(s??"").replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
@@ -68,6 +69,12 @@ const date=s=>{const d=new Date(s);return isNaN(d)? "-":d.toLocaleString("id-ID"
 const id=()=> "CC-"+Date.now().toString(36).toUpperCase()+"-"+Math.random().toString(36).slice(2,6).toUpperCase();
 function save(){return true;}
 function toast(s){$("toast").textContent=s;$("toast").hidden=false;clearTimeout(toast.timer);toast.timer=setTimeout(()=>$("toast").hidden=true,3500);}
+async function registerAppServiceWorker(){if(!("serviceWorker" in navigator))return null;try{return await navigator.serviceWorker.register("./sw.js",{scope:"./"});}catch(err){console.warn("Service Worker unavailable:",err);return null;}}
+function updateNotificationStatus(){const el=$("notificationStatus"),btn=$("enableNotifications");if(!el||!btn)return;if(!("Notification" in window)||!("serviceWorker" in navigator)){el.textContent="Browser ini belum mendukung notifikasi sistem.";btn.disabled=true;return;}const p=Notification.permission;el.textContent=p==="granted"?"Izin notifikasi sudah aktif pada perangkat ini.":p==="denied"?"Izin notifikasi diblokir. Ubah izin melalui pengaturan situs di browser.":"Notifikasi belum diizinkan pada perangkat ini.";btn.textContent=p==="granted"?"Izin sudah aktif":"Aktifkan notifikasi";btn.disabled=p==="denied"||p==="granted";}
+async function enableNotifications(){if(!("Notification" in window)){toast("Browser ini tidak mendukung notifikasi.");return;}await registerAppServiceWorker();try{const permission=await Notification.requestPermission();updateNotificationStatus();if(permission==="granted"){await showSystemNotification("CC SafeGuard Live aktif","Notifikasi uji berhasil ditampilkan.","ccsg-test");toast("Izin notifikasi berhasil diaktifkan pada perangkat ini.");}else toast("Izin notifikasi belum diberikan.");}catch(err){toast("Notifikasi tidak dapat diaktifkan: "+(err.message||""));}}
+async function showSystemNotification(title,body,tag){if(!("Notification" in window)||Notification.permission!=="granted")return;try{const registration=await navigator.serviceWorker.ready;await registration.showNotification(title,{body,icon:"./assets/safeguard-icon.svg",badge:"./assets/safeguard-icon.svg",tag,silent:true,renotify:false,data:{url:"./internal.html"}});}catch(err){console.warn("System notification failed:",err);}}
+async function testNotification(){if(!("Notification" in window)||Notification.permission!=="granted"){toast("Aktifkan izin notifikasi terlebih dahulu.");return;}await showSystemNotification("Tes notifikasi CC SafeGuard","Notifikasi berhasil ditampilkan pada perangkat ini.","ccsg-test");}
+function handleReportNotification(payload){if(!user)return;const n=payload?.new||{},o=payload?.old||{},event=payload?.eventType||payload?.event||"";if(event==="INSERT"&&n.created_by!==user.id){if(n.category==="medical"&&(user.role==="clinic"||user.role==="admin"))showSystemNotification("Laporan medis baru","Ada laporan medis baru. Buka portal untuk meninjau sesuai kewenangan.","medical-"+n.id);else if(n.category==="general"&&(user.role==="committee"||user.role==="admin"))showSystemNotification("Laporan umum baru","Ada laporan umum baru. Buka portal untuk meninjau.","general-"+n.id);}if(event==="UPDATE"&&n.category==="general"&&n.needs_clinic===true&&n.clinic_call_status==="requested"&&o.clinic_call_status!=="requested"&&user.role==="clinic")showSystemNotification("Panggilan P3K baru","Ada permintaan bantuan P3K. Buka portal untuk menerima panggilan.","clinic-call-"+n.id);if(event==="UPDATE"&&n.category==="general"&&n.needs_clinic===true&&o.clinic_call_status!==n.clinic_call_status&&(user.role==="committee"||user.role==="admin")&&n.clinic_assigned_to!==user.id)showSystemNotification("Pembaruan petugas P3K","Status respons petugas P3K telah diperbarui. Buka Ringkasan atau detail laporan.","clinic-update-"+n.id);}
 function audit(action,target,detail=""){if(!user)return Promise.resolve();return supabase.rpc("record_activity",{p_action:action,p_report_code:String(target||""),p_category:null}).then(({error})=>{if(error)console.warn("Activity log failed:",error.message);});}
 function show(which){["login","app"].forEach(x=>$(x).hidden=x!==which);}
 function init(){show("login");$("privateForm").innerHTML=formHTML("private");events();save();}
@@ -83,11 +90,11 @@ async function enterPortal(authUser){
  const profile=await loadCloudProfile(authUser);
  user={id:authUser.id,email:authUser.email,role:profile.role,name:profile.display_name||authUser.email};
  $("loginError").hidden=true;
- const categorySelect=$("privateForm").querySelector('[name="type"]');
- if(categorySelect&&user.role==="clinic")categorySelect.innerHTML='<option value="medical">Medis / kesehatan</option>';
- /* Panitia dapat mengirim laporan umum maupun medis. */
+ /* Semua role dapat membuat laporan umum maupun medis; hak baca tetap dibatasi RLS. */
  await audit("Login",user.name);
  await loadCloudReports();
+ await loadClinicRoster();
+ updateNotificationStatus();
  subscribeRealtime();
  save();
  $("displayUser").textContent=user.name;$("displayRole").textContent=ROLE[user.role];$("avatar").textContent=ROLE[user.role][0];$("roleTitle").textContent=ROLE[user.role].toUpperCase();
@@ -126,7 +133,7 @@ async function restoreSession(){
 async function loadCloudReports(){
  const {data,error}=await supabase.from("reports").select("*").order("created_at",{ascending:false});
  if(error)throw new Error("Laporan cloud gagal dimuat: "+error.message);
- db.reports=(data||[]).map(r=>({id:r.id,ownerId:r.created_by,code:r.report_code,title:r.title,type:r.category,priority:r.priority,status:r.status,verification:r.verification,reporter:r.reporter_name,location:r.location||"",description:r.description,createdAt:r.created_at,assignee:r.assignee||"",handling:r.handling_notes||"",needsClinic:r.needs_clinic===true,clinicCallStatus:r.clinic_call_status||"not_requested",clinicCallUpdatedAt:r.clinic_call_updated_at||null,photos:[]}));
+ db.reports=(data||[]).map(r=>({id:r.id,ownerId:r.created_by,code:r.report_code,title:r.title,type:r.category,priority:r.priority,status:r.status,verification:r.verification,reporter:r.reporter_name,location:r.location||"",description:r.description,createdAt:r.created_at,assignee:r.assignee||"",handling:r.handling_notes||"",needsClinic:r.needs_clinic===true,clinicCallStatus:r.clinic_call_status||"not_requested",clinicCallUpdatedAt:r.clinic_call_updated_at||null,clinicAssignedTo:r.clinic_assigned_to||null,clinicAssignedAt:r.clinic_assigned_at||null,photos:[]}));
  const ids=db.reports.map(r=>r.id);
  if(ids.length){
   const {data:photoRows,error:photoError}=await supabase.from("report_photos").select("*").in("report_id",ids);
@@ -144,18 +151,64 @@ async function loadCloudReports(){
 function subscribeRealtime(){
  if(realtimeChannel)supabase.removeChannel(realtimeChannel);
  realtimeChannel=supabase.channel("ccsg-live-"+user.id)
-  .on("postgres_changes",{event:"*",schema:"public",table:"reports"},payload=>{loadCloudReports().then(()=>{if(user?.role==="clinic"&&payload.new?.needs_clinic===true&&payload.new?.clinic_call_status==="requested")toast("Panggilan P3K baru masuk. Periksa Pusat laporan.");}).catch(e=>toast(e.message));})
+  .on("postgres_changes",{event:"*",schema:"public",table:"reports"},payload=>{handleReportNotification(payload);loadCloudReports().catch(e=>toast(e.message));})
   .on("postgres_changes",{event:"*",schema:"public",table:"report_photos"},()=>loadCloudReports().catch(e=>toast(e.message)))
+  .on("postgres_changes",{event:"*",schema:"public",table:"clinic_staff_directory"},()=>loadClinicRoster().catch(e=>toast(e.message)))
   .on("postgres_changes",{event:"*",schema:"public",table:"activity_log"},()=>{if(user?.role==="admin"&&document.querySelector('[data-view="audit"].active'))renderAudit();})
   .subscribe();
 }
 function clinicCallLabel(status){return ({not_requested:"Belum dipanggil",requested:"P3K dipanggil — menunggu respons",acknowledged:"Panggilan diterima",en_route:"P3K menuju lokasi",arrived:"P3K sudah tiba",completed:"Bantuan P3K selesai"})[status]||"Status tidak diketahui";}
+function clinicDutyLabel(status){return ({available:"Tersedia",busy:"Sedang bertugas",off_duty:"Tidak bertugas"})[status]||"Status tidak diketahui";}
+async function loadClinicRoster(){
+ const {data,error}=await supabase.from("clinic_staff_directory").select("user_id,display_name,is_active,duty_status,updated_at").order("display_name");
+ if(error){$("clinicRosterList").innerHTML='<div class="empty">Daftar petugas belum dapat dimuat: '+esc(error.message)+'</div>';return;}
+ clinicRoster=data||[];renderClinicRoster();
+}
+function renderClinicRoster(){
+ const list=$("clinicRosterList");if(!list)return;
+ const entries=clinicRoster||[];
+ if(!entries.length){list.innerHTML='<div class="empty">Belum ada akun Klinik / P3K yang terdaftar.</div>';}
+ else list.innerHTML=entries.map(p=>{const status=p.is_active?clinicDutyLabel(p.duty_status):"Akun nonaktif";const cls=!p.is_active?"status":p.duty_status==="available"?"selesai":p.duty_status==="busy"?"Tinggi":"status";return '<article class="item roster-item"><div><h3>'+esc(p.display_name)+'</h3><span class="meta">Petugas Klinik / P3K</span><div class="meta">Pembaruan: '+esc(date(p.updated_at))+'</div></div><span class="tag roster-status '+cls+'">'+esc(status)+'</span></article>';}).join("");
+ const controls=$("clinicDutyControls");if(controls)controls.hidden=user?.role!=="clinic";
+ if(user?.role==="clinic"){const mine=entries.find(p=>p.user_id===user.id);document.querySelectorAll("[data-duty-status]").forEach(b=>{b.disabled=!mine||mine.duty_status==="busy"||!mine.is_active||(b.dataset.dutyStatus===mine.duty_status);});}
+}
+async function setMyDutyStatus(status){
+ if(user?.role!=="clinic"||!["available","off_duty"].includes(status)){toast("Perubahan status hanya tersedia untuk akun Klinik/P3K.");return;}
+ const mine=clinicRoster.find(p=>p.user_id===user.id);if(mine?.duty_status==="busy"){toast("Status tidak dapat diubah selama masih menangani panggilan.");return;}
+ const {error}=await supabase.from("clinic_staff_directory").update({duty_status:status}).eq("user_id",user.id);
+ if(error){toast("Status petugas gagal diperbarui: "+error.message);return;}
+ await loadClinicRoster();toast("Status petugas diperbarui menjadi "+clinicDutyLabel(status)+".");
+}
 function visible(){return db.reports.filter(r=>user.role==="admin"||(user.role==="committee"&&r.type==="general")||(user.role==="clinic"&&(r.type==="medical"||(r.type==="general"&&r.needsClinic)))); }
 function sorted(a){return[...a].sort((x,y)=>(RANK[y.priority]||0)-(RANK[x.priority]||0)||new Date(y.createdAt)-new Date(x.createdAt));}
 function card(r){let st=r.status.toLowerCase().replaceAll(" ","-");return'<article class="item"><div class="itemtop"><div><h3>'+esc(r.title)+'</h3><span class="meta">'+esc(r.code||r.id)+' · '+esc(date(r.createdAt))+'</span></div><span class="tag '+esc(r.priority)+'">'+esc(r.priority)+'</span></div><div class="tags"><span class="tag '+(r.type==="medical"?"medis":"")+'">'+(r.type==="medical"?"MEDIS":"UMUM")+'</span><span class="tag status '+st+'">'+esc(r.status)+'</span>'+(r.needsClinic?'<span class="tag Tinggi">P3K dipanggil</span>':"")+'</div><p class="desc">'+esc(r.description).slice(0,210)+'</p><div class="itemfoot"><span class="meta">Pelapor: <b>'+esc(r.reporter)+'</b></span><button class="linkbtn" data-open="'+esc(r.id)+'">Buka detail →</button></div></article>';}
-function render(){let a=visible();$("mTotal").textContent=a.length;$("mReview").textContent=a.filter(r=>["Baru","Perlu verifikasi"].includes(r.status)).length;$("mProgress").textContent=a.filter(r=>r.status==="Sedang ditangani").length;$("mDone").textContent=a.filter(r=>r.status==="Selesai").length;$("priorityList").innerHTML=sorted(a).slice(0,4).map(card).join("")||'<div class="empty">Belum ada laporan untuk peran ini.</div>';renderList();if(user.role==="admin"){renderAudit();}}
+function render(){let a=visible();$("mTotal").textContent=a.length;$("mReview").textContent=a.filter(r=>["Baru","Perlu verifikasi"].includes(r.status)).length;$("mProgress").textContent=a.filter(r=>r.status==="Sedang ditangani").length;$("mDone").textContent=a.filter(r=>r.status==="Selesai").length;$("priorityList").innerHTML=sorted(a).slice(0,4).map(card).join("")||'<div class="empty">Belum ada laporan untuk peran ini.</div>';renderList();renderClinicRoster();if(user.role==="admin"){renderAudit();}}
 function renderList(){let q=$("search").value.toLowerCase(),st=$("filterStatus").value,pr=$("filterPriority").value;let a=sorted(visible().filter(r=>(!q||[r.id,r.title,r.reporter,r.description].join(" ").toLowerCase().includes(q))&&(!st||r.status===st)&&(!pr||r.priority===pr)));$("allReports").innerHTML=a.map(card).join("")||'<div class="empty">Tidak ada laporan yang cocok.</div>';$("reportSub").textContent=user.role==="clinic"?"Laporan medis serta laporan umum yang memanggil P3K.":user.role==="committee"?"Laporan umum dari seluruh Panitia. Laporan medis diteruskan ke Klinik/P3K.":"Pusat bersama: seluruh laporan umum dan medis.";}
 function go(page){document.querySelectorAll(".page").forEach(x=>x.classList.toggle("active",x.dataset.view===page));document.querySelectorAll(".nav button").forEach(x=>x.classList.toggle("active",x.dataset.page===page));if(page==="reports")renderList();if(page==="audit")renderAudit();if(page==="accounts"&&user.role==="admin")renderAccounts();window.scrollTo(0,0);}
+async function respondToClinicCall(next){
+ const r=db.reports.find(x=>x.id===detailId);if(!r||user?.role!=="clinic")return;
+ const nowIso=new Date().toISOString();
+ if(next==="acknowledged"){
+  const mine=clinicRoster.find(p=>p.user_id===user.id);
+  if(!mine||mine.duty_status!=="available"){toast("Petugas harus berstatus tersedia untuk menerima panggilan.");return;}
+  const {data,error}=await supabase.from("reports").update({clinic_assigned_to:user.id,clinic_assigned_at:nowIso,clinic_call_status:"acknowledged",clinic_call_updated_at:nowIso}).eq("id",r.id).eq("clinic_call_status","requested").is("clinic_assigned_to",null).select("id").maybeSingle();
+  if(error){toast("Panggilan gagal diterima: "+error.message);return;}
+  if(!data){toast("Panggilan sudah diterima petugas lain atau statusnya berubah.");await loadCloudReports();return;}
+  const {error:presenceError}=await supabase.from("clinic_staff_directory").update({duty_status:"busy"}).eq("user_id",user.id);
+  if(presenceError)toast("Panggilan diterima, tetapi status ketersediaan belum berubah: "+presenceError.message);
+ }else{
+  const {data,error}=await supabase.from("reports").update({clinic_call_status:next,clinic_call_updated_at:nowIso}).eq("id",r.id).eq("clinic_assigned_to",user.id).select("id").maybeSingle();
+  if(error){toast("Status penanganan gagal diperbarui: "+error.message);return;}
+  if(!data){toast("Hanya petugas yang menerima panggilan yang dapat memperbarui status ini.");return;}
+  if(next==="completed"){
+   const {count,error:countError}=await supabase.from("reports").select("id",{count:"exact",head:true}).eq("clinic_assigned_to",user.id).in("clinic_call_status",["acknowledged","en_route","arrived"]);
+   if(!countError&&count===0)await supabase.from("clinic_staff_directory").update({duty_status:"available"}).eq("user_id",user.id);
+  }
+ }
+ await audit("Respons P3K: "+clinicCallLabel(next),r.code);
+ await loadCloudReports();await loadClinicRoster();openDetail(r.id);
+ toast(next==="acknowledged"?"Panggilan berhasil diterima.":"Status penanganan diperbarui: "+clinicCallLabel(next)+".");
+}
 function classify(text,type){let t=text.toLowerCase();if(type==="medical"&&/pingsan|tidak sadar|sulit bernapas|sesak napas|kejang|perdarahan/.test(t))return{level:"Darurat",note:"Kata kunci berisiko terdeteksi. Hubungi petugas medis/orang dewasa secara langsung; jangan menunggu aplikasi."};if(type==="medical"&&/cedera|jatuh|pusing|nyeri|sakit|demam|mual|bengkak/.test(t))return{level:"Tinggi",note:"Kata kunci keluhan terdeteksi; petugas klinik perlu meninjau langsung."};return{level:"Sedang",note:"Saran awal dari aturan kata kunci sederhana. Petugas tetap menentukan prioritas."};}
 async function submitReport(form){
  const d=new FormData(form),type=String(d.get("type")||""),desc=String(d.get("description")||"").trim();
@@ -186,7 +239,7 @@ async function submitReport(form){
  finally{if(submitButton){submitButton.disabled=false;submitButton.textContent="Kirim laporan";}}
 }
 function openDetail(rid){let r=db.reports.find(x=>x.id===rid);if(!r)return;detailId=rid;let can=user.role==="admin"||(user.role==="clinic"&&(r.type==="medical"||(r.type==="general"&&r.needsClinic)))||(user.role==="committee"&&r.type==="general");let h='<div class="detailgrid"><div class="detailcell"><small>ID</small><b>'+esc(r.id)+'</b></div><div class="detailcell"><small>KATEGORI</small><b>'+(r.type==="medical"?"Medis":"Umum")+'</b></div><div class="detailcell"><small>PELAPOR</small><b>'+esc(r.reporter)+'</b></div><div class="detailcell"><small>WAKTU</small><b>'+esc(date(r.createdAt))+'</b></div><div class="detailcell"><small>URGENSI</small><b>'+esc(r.priority)+'</b></div><div class="detailcell"><small>STATUS</small><b>'+esc(r.status)+'</b></div><div class="detailcell"><small>LOKASI</small><b>'+esc(r.location)+'</b></div><div class="detailcell"><small>VERIFIKASI</small><b>'+esc(r.verification)+'</b></div></div><p class="desc" style="font-size:12px;white-space:pre-wrap">'+esc(r.description)+'</p>';
-if(r.type==="general"&&r.needsClinic)h+='<div class="detailcell"><small>STATUS PANGGILAN P3K</small><b>'+esc(clinicCallLabel(r.clinicCallStatus))+'</b>'+(r.clinicCallUpdatedAt?'<p class="meta">Pembaruan: '+esc(date(r.clinicCallUpdatedAt))+'</p>':"")+'</div>';
+if(r.type==="general"&&r.needsClinic){const assigned=clinicRoster.find(p=>p.user_id===r.clinicAssignedTo);h+='<div class="detailcell"><small>STATUS PANGGILAN P3K</small><b>'+esc(clinicCallLabel(r.clinicCallStatus))+'</b>'+(r.clinicCallUpdatedAt?'<p class="meta">Pembaruan: '+esc(date(r.clinicCallUpdatedAt))+'</p>':"")+'</div>';if(assigned)h+='<div class="detailcell"><small>PETUGAS P3K</small><b>'+esc(assigned.display_name)+'</b><p class="meta">'+esc(clinicDutyLabel(assigned.duty_status))+'</p></div>';if(user.role==="clinic"){if(!r.clinicAssignedTo&&r.clinicCallStatus==="requested"){const mine=clinicRoster.find(p=>p.user_id===user.id);h+=mine&&mine.duty_status==="available"?'<div class="detailform"><h3>Respons P3K</h3><button class="btn primary" data-clinic-response="acknowledged">Terima panggilan</button></div>':'<p class="hint">Status Anda tidak tersedia untuk menerima panggilan baru.</p>';}else if(r.clinicAssignedTo===user.id&&r.clinicCallStatus!=="completed"){h+='<div class="detailform"><h3>Perbarui penanganan</h3><div class="actions">'+(r.clinicCallStatus==="acknowledged"?'<button class="btn primary" data-clinic-response="en_route">Sedang menuju lokasi</button>':"")+(r.clinicCallStatus==="en_route"?'<button class="btn primary" data-clinic-response="arrived">Sudah tiba</button>':"")+(r.clinicCallStatus==="arrived"?'<button class="btn primary" data-clinic-response="completed">Penanganan selesai</button>':"")+'</div></div>';}else if(r.clinicAssignedTo&&r.clinicAssignedTo!==user.id){h+='<p class="hint">Panggilan ini sudah diterima oleh petugas P3K lain.</p>';}}}
 if((user.role==="committee"||user.role==="admin")&&r.type==="general"&&!r.needsClinic)h+='<div class="detailform"><h3>Butuh bantuan medis?</h3><p class="muted">Panggilan akan terlihat oleh akun P3K yang sedang membuka portal.</p><button class="btn danger" data-call-clinic>Panggil P3K sekarang</button></div>';
 if(user.role==="clinic"&&r.type==="general"&&r.needsClinic)h+='<div class="detailform"><h3>Respons P3K</h3><div class="actions"><button class="btn primary" data-clinic-response="acknowledged">Terima panggilan</button><button class="btn secondary" data-clinic-response="en_route">Menuju lokasi</button><button class="btn secondary" data-clinic-response="arrived">Sudah tiba</button><button class="btn secondary" data-clinic-response="completed">Bantuan selesai</button></div></div>';
 if(r.assignee||r.handling)h+='<div class="detailcell"><small>PENANGGUNG JAWAB</small><b>'+esc(r.assignee||"-")+'</b><p class="desc">'+esc(r.handling||"")+'</p></div>';
@@ -198,7 +251,7 @@ h+='<button class="btn secondary" id="printReport" style="margin-top:14px">Cetak
 async function mutate(action,fn){
  let r=db.reports.find(x=>x.id===detailId);if(!r)return;
  fn(r);
- const {error}=await supabase.from("reports").update({title:r.title,description:r.description,status:r.status,verification:r.verification,assignee:r.assignee||"",handling_notes:r.handling||"",needs_clinic:r.needsClinic===true,clinic_call_status:r.clinicCallStatus||"not_requested",clinic_call_updated_at:r.clinicCallUpdatedAt||null}).eq("id",r.id);
+ const {error}=await supabase.from("reports").update({title:r.title,description:r.description,status:r.status,verification:r.verification,assignee:r.assignee||"",handling_notes:r.handling||"",needs_clinic:r.needsClinic===true,clinic_call_status:r.clinicCallStatus||"not_requested",clinic_call_updated_at:r.clinicCallUpdatedAt||null,clinic_assigned_to:r.clinicAssignedTo||null,clinic_assigned_at:r.clinicAssignedAt||null}).eq("id",r.id);
  if(error){toast("Perubahan gagal disimpan: "+error.message);await loadCloudReports();return;}
  await loadCloudReports();openDetail(detailId);await audit(action,r.code);toast(action+" berhasil disimpan.");
 }
@@ -263,6 +316,9 @@ async function deleteCloudAccount(id){
  catch(err){toast("Akun tidak dapat dihapus: "+(err.message||"Nonaktifkan akun jika riwayatnya harus dipertahankan."));}
 }function events(){
 $("loginForm").addEventListener("submit",signIn);$("logout").addEventListener("click",logout);
+$("refreshClinicRoster").addEventListener("click",()=>loadClinicRoster());
+$("enableNotifications").addEventListener("click",enableNotifications);
+$("testNotification").addEventListener("click",testNotification);
 $("createAccountForm").addEventListener("submit",e=>{e.preventDefault();createAccount(e.currentTarget);});$("refreshAccounts").addEventListener("click",()=>renderAccounts());
 
 document.addEventListener("click",e=>{let n=e.target.closest("[data-page]");if(n)go(n.dataset.page);
@@ -273,7 +329,8 @@ let g=e.target.closest("[data-goto]");if(g)go(g.dataset.goto);let o=e.target.clo
 let v=e.target.closest("[data-verify]");if(v)mutate("Verifikasi laporan",r=>{r.verification=v.dataset.verify;r.status=v.dataset.verify==="Terverifikasi"?"Diverifikasi":v.dataset.verify==="Ditolak"?"Ditolak":"Perlu verifikasi";});
 let ed=e.target.closest("[data-edit]");if(ed){let title=$("editTitle").value.trim(),desc=$("editDesc").value.trim();if(!title||!desc){toast("Judul dan deskripsi wajib diisi.");return;}mutate("Edit laporan",r=>{r.title=title;r.description=desc;});}
 let call=e.target.closest("[data-call-clinic]");if(call){if(!confirm("Panggil P3K untuk laporan ini? P3K akan dapat melihat laporan ini."))return;mutate("Panggil P3K",r=>{r.needsClinic=true;r.clinicCallStatus="requested";r.clinicCallUpdatedAt=now();});}
-let response=e.target.closest("[data-clinic-response]");if(response){const next=response.dataset.clinicResponse;mutate("Respons P3K: "+clinicCallLabel(next),r=>{r.clinicCallStatus=next;r.clinicCallUpdatedAt=now();});}
+let response=e.target.closest("[data-clinic-response]");if(response){respondToClinicCall(response.dataset.clinicResponse);}
+let duty=e.target.closest("[data-duty-status]");if(duty)setMyDutyStatus(duty.dataset.dutyStatus);
 let h=e.target.closest("[data-handle]");if(h){let name=$("handler").value.trim(),notes=$("handling").value.trim();if(!name||!notes){toast("Isi penanggung jawab dan catatan penanganan.");return;}mutate("Catat penanganan",r=>{r.assignee=name;r.handling=notes;r.status=h.dataset.handle;});}
 if(e.target.id==="printReport")printCurrent();
 });
@@ -283,7 +340,7 @@ $("search").addEventListener("input",renderList);$("filterStatus").addEventListe
 $("exportReports").addEventListener("click",()=>{let a=visible();csv(a,["ID","Judul","Kategori","Urgensi","Status","Pelapor","Waktu","Penanggung jawab","Penanganan"],r=>[r.id,r.title,r.type,r.priority,r.status,r.reporter,date(r.createdAt),r.assignee,r.handling],"cc-safeguard-laporan.csv");audit("Ekspor laporan","CSV");save();});
 
 }
-events();$("privateForm").innerHTML=formHTML("private");show("login");restoreSession();
+events();$("privateForm").innerHTML=formHTML("private");show("login");registerAppServiceWorker();restoreSession();
 })();
 </script>
 </body></html>
