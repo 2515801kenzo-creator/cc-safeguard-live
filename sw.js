@@ -1,5 +1,5 @@
 /* CC SafeGuard Live offline shell and notification worker. Never cache report or medical data. */
-const CACHE="ccsl-shell-v9-20261106";
+const CACHE="ccsl-shell-v10-20261106";
 const SHELL=["./","./index.html","./internal.html","./manifest.webmanifest","./ui-v2.css","./features-v2.js","./operations-v3.js","./vendor/qrcode-generator.js","./vendor/jsQR.js","./assets/safeguard-icon.svg","./assets/kolese-kanisius-logo.svg"];
 self.addEventListener("install",event=>{
  event.waitUntil(caches.open(CACHE).then(cache=>cache.addAll(SHELL)).then(()=>self.skipWaiting()));
