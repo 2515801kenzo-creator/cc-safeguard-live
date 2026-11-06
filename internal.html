@@ -244,7 +244,7 @@ async function setMyDutyStatus(status){
 }
 function visible(){return db.reports.filter(r=>user.role==="admin"||(user.role==="committee"&&r.type==="general")||(user.role==="clinic"&&(r.type==="medical"||(r.type==="general"&&r.needsClinic)))); }
 function sorted(a){return[...a].sort((x,y)=>(RANK[y.priority]||0)-(RANK[x.priority]||0)||new Date(y.createdAt)-new Date(x.createdAt));}
-function card(r){let st=r.status.toLowerCase().replaceAll(" ","-"),urgency=["Darurat","Tinggi","Sedang","Rendah"].includes(r.priority)?r.priority:"Rendah";return'<article class="item urgency-'+urgency+'"><div class="itemtop"><div><h3>'+esc(r.title)+'</h3><span class="meta">'+esc(r.code||r.id)+' · '+esc(date(r.createdAt))+'</span></div><span class="tag '+urgency+'">'+urgency.toUpperCase()+'</span></div><div class="tags"><span class="tag '+(r.type==="medical"?"medis":"")+'">'+(r.type==="medical"?"MEDIS":"UMUM")+'</span><span class="tag status '+st+'">'+esc(r.status)+'</span>'+(r.needsClinic?'<span class="tag Tinggi">P3K dipanggil</span>':"")+'</div><p class="desc">'+esc(r.description).slice(0,210)+'</p><div class="itemfoot"><span class="meta">Pelapor: <b>'+esc(r.reporter)+'</b> · '+esc(r.location||"Lokasi tidak dicantumkan")+'</span><button class="linkbtn" data-open="'+esc(r.id)+'">Buka detail →</button></div></article>';}
+function card(r){let st=r.status.toLowerCase().replaceAll(" ","-"),urgency=["Darurat","Tinggi","Sedang","Rendah"].includes(r.priority)?r.priority:"Rendah",mine=user?.role==="clinic"?clinicAssignments.find(a=>a.report_id===r.id&&a.clinic_user_id===user.id):null,quick="",taskLabel="";if(mine){if(mine.status==="acknowledged"){quick='<button class="btn primary" data-card-clinic-response="en_route" data-assignment="'+esc(mine.id)+'" data-report="'+esc(r.id)+'">OTW — Menuju Lokasi</button>';taskLabel="Menunggu keberangkatan";}else if(mine.status==="en_route"||mine.status==="arrived"){quick='<button class="btn primary" data-card-clinic-response="in_treatment" data-assignment="'+esc(mine.id)+'" data-report="'+esc(r.id)+'">Mulai Penanganan</button>';taskLabel="OTW / Dalam perjalanan";}else if(mine.status==="in_treatment"){quick='<button class="btn danger" data-card-clinic-response="completed" data-assignment="'+esc(mine.id)+'" data-report="'+esc(r.id)+'">Selesaikan Penanganan</button>';taskLabel="Sedang penanganan";}else if(mine.status==="completed"){taskLabel="Tugas selesai";}}return'<article class="item urgency-'+urgency+'"><div class="itemtop"><div><h3>'+esc(r.title)+'</h3><span class="meta">'+esc(r.code||r.id)+' · '+esc(date(r.createdAt))+'</span></div><span class="tag '+urgency+'">'+urgency.toUpperCase()+'</span></div><div class="tags"><span class="tag '+(r.type==="medical"?"medis":"")+'">'+(r.type==="medical"?"MEDIS":"UMUM")+'</span><span class="tag status '+st+'">'+esc(r.status)+'</span>'+(r.needsClinic?'<span class="tag Tinggi">P3K dipanggil</span>':"")+(taskLabel?'<span class="tag">'+esc(taskLabel)+'</span>':"")+'</div><p class="desc">'+esc(r.description).slice(0,210)+'</p><div class="itemfoot"><span class="meta">Pelapor: <b>'+esc(r.reporter)+'</b> · '+esc(r.location||"Lokasi tidak dicantumkan")+'</span><div class="actions"><button class="linkbtn" data-open="'+esc(r.id)+'">Buka detail →</button>'+quick+'</div></div></article>';}
 function render(){let a=visible();let active=a.filter(r=>!(r.status==="Selesai"||(r.type==="general"&&r.needsClinic&&r.clinicCallStatus==="completed")));$("mTotal").textContent=a.length;$("mReview").textContent=a.filter(r=>r.status==="Baru").length;$("mProgress").textContent=a.filter(r=>r.status==="Sedang ditangani").length;$("mDone").textContent=a.filter(r=>r.status==="Selesai").length;$("priorityList").innerHTML=sorted(user.role==="clinic"?active:a).slice(0,4).map(card).join("")||'<div class="empty">Belum ada laporan untuk peran ini.</div>';renderList();renderClinicRoster();if(user.role==="admin"){renderAudit();}}
 function isReportCompleted(r){return r.status==="Selesai"||(r.type==="general"&&r.needsClinic&&r.clinicCallStatus==="completed");}
 function renderList(){
@@ -279,15 +279,16 @@ async function requestClinicCall(){
   await loadCloudReports();await loadClinicRoster();openDetail(r.id);
   toast("Panggilan P3K dikirim kepada petugas Klinik/P3K.");
 }
-async function respondToClinicCall(next,assignmentId){
+async function respondToClinicCall(next,assignmentId,reportId){
   if(user?.role!=="clinic"||!assignmentId)return;
   const labels={en_route:"OTW — menuju lokasi",arrived:"Tiba di lokasi",in_treatment:"Mulai penanganan",completed:"Penanganan selesai"};
+  const r=db.reports.find(x=>x.id===(reportId||detailId));
   const {error}=await supabase.rpc("ccsg_update_clinic_assignment",{p_assignment_id:assignmentId,p_status:next});
   if(error){toast("Status tugas gagal diperbarui: "+error.message);return;}
-  const r=db.reports.find(x=>x.id===detailId);
   await audit("Status tugas P3K: "+(labels[next]||next),r?.code||"");
-  await loadCloudReports();await loadClinicRoster();if(r)openDetail(r.id);
-  toast("Status tugas diperbarui: "+(labels[next]||next)+".");
+  await loadCloudReports();await loadClinicRoster();render();
+  if(r&&(!$("detailModal").hidden))openDetail(r.id);
+  toast("Status tugas dan laporan diperbarui: "+(labels[next]||next)+".");
 }
 function classify(text,type){let t=text.toLowerCase();if(type==="medical"&&/pingsan|tidak sadar|sulit bernapas|sesak napas|kejang|perdarahan/.test(t))return{level:"Darurat",note:"Kata kunci berisiko terdeteksi. Hubungi petugas medis/orang dewasa secara langsung; jangan menunggu aplikasi."};if(type==="medical"&&/cedera|jatuh|pusing|nyeri|sakit|demam|mual|bengkak/.test(t))return{level:"Tinggi",note:"Kata kunci keluhan terdeteksi; petugas klinik perlu meninjau langsung."};return{level:"Sedang",note:"Saran awal dari aturan kata kunci sederhana. Petugas tetap menentukan prioritas."};}
 async function submitReport(form){
@@ -436,7 +437,7 @@ let g=e.target.closest("[data-goto]");if(g)go(g.dataset.goto);let o=e.target.clo
 let ed=e.target.closest("[data-edit]");if(ed){let title=$("editTitle").value.trim(),desc=$("editDesc").value.trim();if(!title||!desc){toast("Judul dan deskripsi wajib diisi.");return;}mutate("Edit laporan",r=>{r.title=title;r.description=desc;});}
 let call=e.target.closest("[data-call-clinic]");if(call){if(!confirm("Kirim panggilan P3K sesuai jumlah petugas yang dipilih?"))return;requestClinicCall();}
 let claim=e.target.closest("[data-clinic-claim]");if(claim)claimClinicTask();
-let response=e.target.closest("[data-clinic-response]");if(response){respondToClinicCall(response.dataset.clinicResponse,response.dataset.assignment);}
+let response=e.target.closest("[data-clinic-response]");if(response){respondToClinicCall(response.dataset.clinicResponse,response.dataset.assignment);}let cardResponse=e.target.closest("[data-card-clinic-response]");if(cardResponse){respondToClinicCall(cardResponse.dataset.cardClinicResponse,cardResponse.dataset.assignment,cardResponse.dataset.report);}
 let duty=e.target.closest("[data-duty-status]");if(duty)setMyDutyStatus(duty.dataset.dutyStatus);
 let h=e.target.closest("[data-handle]");if(h){let name=$("handler").value.trim(),notes=$("handling").value.trim();if(!name||!notes){toast("Isi penanggung jawab dan catatan penanganan.");return;}mutate("Catat penanganan",r=>{r.assignee=name;r.handling=notes;r.status=h.dataset.handle;});}
 if(e.target.id==="printReport")printCurrent();
