@@ -46,6 +46,14 @@ Deno.serve(async (req: Request) => {
     return json({ error: "Unauthorized" }, 401);
   }
 
+  let appServer: webpush.ApplicationServer;
+  try {
+    const vapidKeys = await webpush.importVapidKeys(JSON.parse(vapidKeysJson) as webpush.ExportedVapidKeys);
+    appServer = await webpush.ApplicationServer.new({ contactInformation: VAPID_SUBJECT, vapidKeys });
+  } catch {
+    return json({ error: "VAPID keys in Supabase Vault are invalid." }, 500);
+  }
+
   let payload: Record<string, unknown>;
   try { payload = await req.json(); } catch { return json({ error: "Invalid JSON body" }, 400); }
 
@@ -83,8 +91,6 @@ Deno.serve(async (req: Request) => {
   if (!subscriptions?.length) return json({ ok: true, sent: 0, reason: "Recipients have not registered a device." });
 
   try {
-    const vapidKeys = await webpush.importVapidKeys(JSON.parse(vapidKeysJson) as webpush.ExportedVapidKeys);
-    const appServer = await webpush.ApplicationServer.new({ contactInformation: VAPID_SUBJECT, vapidKeys });
     const message = JSON.stringify(notificationFor(eventType, category, reportId));
     let sent = 0, expired = 0, failed = 0;
 
