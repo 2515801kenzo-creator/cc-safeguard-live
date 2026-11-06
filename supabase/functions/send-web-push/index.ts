@@ -5,7 +5,6 @@ const SUPABASE_URL = Deno.env.get("SUPABASE_URL") ?? "https://vhovzyzktrzenuulzn
 const SERVICE_KEY =
   Deno.env.get("SUPABASE_SERVICE_ROLE_KEY") ??
   JSON.parse(Deno.env.get("SUPABASE_SECRET_KEYS") ?? "{}").default;
-const VAPID_KEYS_JSON = Deno.env.get("VAPID_KEYS_JSON") ?? "";
 const VAPID_SUBJECT = Deno.env.get("VAPID_SUBJECT") ?? "https://2515801kenzo-creator.github.io/cc-safeguard-live/";
 const encoder = new TextEncoder();
 
@@ -16,9 +15,9 @@ function json(data: unknown, status = 200) {
   });
 }
 
-async function tokenMatches(received: string | null) {
-  if (!received || !VAPID_KEYS_JSON || !/^[0-9a-f]{64}$/i.test(received)) return false;
-  const expected = new Uint8Array(await crypto.subtle.digest("SHA-256", encoder.encode(VAPID_KEYS_JSON)));
+async function tokenMatches(received: string | null, vapidKeysJson: string) {
+  if (!received || !vapidKeysJson || !/^[0-9a-f]{64}$/i.test(received)) return false;
+  const expected = new Uint8Array(await crypto.subtle.digest("SHA-256", encoder.encode(vapidKeysJson)));
   const supplied = new Uint8Array(received.match(/.{2}/g)!.map((b) => parseInt(b, 16)));
   let mismatch = expected.length ^ supplied.length;
   for (let i = 0; i < expected.length; i++) mismatch |= expected[i] ^ (supplied[i] ?? 0);
@@ -36,8 +35,16 @@ function notificationFor(eventType: string, category: string, reportId: string) 
 
 Deno.serve(async (req: Request) => {
   if (req.method !== "POST") return json({ error: "Method not allowed" }, 405);
-  if (!(await tokenMatches(req.headers.get("x-ccsg-push-token")))) return json({ error: "Unauthorized" }, 401);
-  if (!SERVICE_KEY || !VAPID_KEYS_JSON) return json({ error: "Push server secrets are not configured." }, 503);
+  if (!SERVICE_KEY) return json({ error: "Supabase server key is not configured." }, 503);
+
+  const admin = createClient(SUPABASE_URL, SERVICE_KEY, { auth: { persistSession: false, autoRefreshToken: false } });
+  const { data: vapidKeysJson, error: vapidError } = await admin.rpc("ccsg_get_vapid_keys");
+  if (vapidError || typeof vapidKeysJson !== "string" || vapidKeysJson.length < 100) {
+    return json({ error: "Private VAPID keys are not configured in Supabase Vault." }, 503);
+  }
+  if (!(await tokenMatches(req.headers.get("x-ccsg-push-token"), vapidKeysJson))) {
+    return json({ error: "Unauthorized" }, 401);
+  }
 
   let payload: Record<string, unknown>;
   try { payload = await req.json(); } catch { return json({ error: "Invalid JSON body" }, 400); }
@@ -61,7 +68,6 @@ Deno.serve(async (req: Request) => {
   else if (eventType === "clinic_update") roleTargets = ["committee", "admin"];
   else return json({ error: "Unsupported notification event." }, 400);
 
-  const admin = createClient(SUPABASE_URL, SERVICE_KEY, { auth: { persistSession: false, autoRefreshToken: false } });
   let recipientIds: string[] = [];
   if (eventType === "test") recipientIds = [String(payload.target_user_id)];
   else {
@@ -77,7 +83,7 @@ Deno.serve(async (req: Request) => {
   if (!subscriptions?.length) return json({ ok: true, sent: 0, reason: "Recipients have not registered a device." });
 
   try {
-    const vapidKeys = await webpush.importVapidKeys(JSON.parse(VAPID_KEYS_JSON) as webpush.ExportedVapidKeys);
+    const vapidKeys = await webpush.importVapidKeys(JSON.parse(vapidKeysJson) as webpush.ExportedVapidKeys);
     const appServer = await webpush.ApplicationServer.new({ contactInformation: VAPID_SUBJECT, vapidKeys });
     const message = JSON.stringify(notificationFor(eventType, category, reportId));
     let sent = 0, expired = 0, failed = 0;
